@@ -87,6 +87,13 @@ primitive for it — so aggregate/percentile queries are written as raw SQL (win
 `PERCENTILE`-style logic) and computed **in the database**, never by loading 10k rows into Node.
 This keeps analytics responsive at scale, which the requirements call out explicitly.
 
+**Prisma 7 specifics.** We build on Prisma 7 (current latest). Prisma 7 moved the database URL out
+of `schema.prisma` into a `prisma.config.ts`, and connects through a **driver adapter** rather than
+a bundled engine — for SQLite that adapter is `@prisma/adapter-better-sqlite3`, which is exactly the
+`better-sqlite3` driver named above. The generated client is emitted to `apps/api/src/generated`
+(gitignored, regenerated on `postinstall`). This is more current-practice setup than Prisma 6's
+in-schema URL, and realises "SQLite via better-sqlite3" literally.
+
 ### Performance notes
 
 - Indexes on the columns we filter/sort by: `country`, `department`, `job_title`, `salary`, `name`.
@@ -149,6 +156,18 @@ frontend — one definition of an "Employee" across the wire.
 
 A single trusted HR-Manager user class behind a simple session/token gate (requirements §5.5). No
 roles or permissions — auth is only a lock on sensitive data, deliberately kept minimal.
+
+### Monorepo & tooling
+
+The project is a single **pnpm-workspaces** monorepo. Runnable apps live in `apps/` (`api`, `web`);
+shared libraries live in `packages/` (`shared` domain schemas/types, plus shared `tsconfig` and
+`eslint-config`). pnpm is the de-facto standard for JS monorepos and links the shared package via
+`workspace:*`. Task orchestration is plain root scripts fanning out with `pnpm -r` / `--filter`;
+**Turborepo is deferred** — with two apps and one shared package its caching isn't yet worth the
+ceremony. **Node 22 LTS** is pinned in `.nvmrc` (Prisma 7 does not support Node 25). Latest stable
+versions are used across the stack and frozen in the committed lockfile. See the repository
+[README](../README.md) and [docs/plans/01-project-setup.md](plans/01-project-setup.md) for the
+layout and setup steps.
 
 ---
 

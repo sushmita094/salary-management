@@ -72,3 +72,20 @@ sub-folder structure and a "Source-folder conventions" section: `apps/api/src` s
 dependency flow, `apps/web/src` split by UI concern (`components`, `features`, `pages`, `hooks`,
 `api`, `lib`, `types`, `styles`), and `packages/shared/src` into `schemas`/`types`. Folded folder
 creation (each with a placeholder so it commits) into the api and web scaffold phases.
+
+> start implementing the plan phase wise, and commit each phase as you go.
+
+Implemented the project-setup plan as six committed phases. **Phase 0:** root pnpm-workspaces
+skeleton (orchestration scripts, `.nvmrc`, `.gitignore`, Prettier). **Phase 1:** shared
+`@acme/tsconfig` (strict bases) and `@acme/eslint-config` (ESLint 10 flat config). **Phase 2:**
+`@acme/shared` Zod Employee schema + inferred types, source-exported, with Vitest coverage.
+**Phase 3:** `apps/api` — layered Express 5 app (`/health` + Supertest test) and Prisma 7 on SQLite
+via the `@prisma/adapter-better-sqlite3` driver adapter + `prisma.config.ts`; initial migration
+committed. **Phase 4:** `apps/web` — React 19 + Vite + Tailwind v4 + TanStack Query SPA proving the
+api↔web path through the dev proxy and shared types, with RTL + Playwright tests. **Phase 5:**
+GitHub Actions CI (lint/typecheck/test/build + Playwright). **Phase 6:** README and doc updates.
+
+Decisions surfaced during the build: installed **pnpm** (corepack absent) and switched the runtime
+to **Node 22 LTS** because the latest **Prisma 7** does not support the machine's Node 25; confirmed
+Prisma 7's new driver-adapter architecture with the user (chose latest over pinning Prisma 6).
+Verified each phase with typecheck/lint/test and an end-to-end `/api/health` proxy check.

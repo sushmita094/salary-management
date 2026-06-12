@@ -38,7 +38,23 @@ maintainable code, meaningful tests, and intentional, well-documented use of AI 
 - **Design for scale.** The dataset is ~10,000 employees — lists must paginate and aggregates
   (including median) must stay responsive. Don't build against a toy dataset.
 
+## Structure
+
+Single **pnpm-workspaces** monorepo (Node 22 LTS, pinned in `.nvmrc`):
+
+- `apps/api` — Express 5 + Prisma 7 (SQLite via the better-sqlite3 driver adapter) backend. Layered
+  `src/`: `routes → controllers → services → repositories → db` (+ `middleware`, `config`, `utils`).
+- `apps/web` — React 19 + Vite + Tailwind v4 SPA with TanStack Query. Feature-first `src/`:
+  `components`, `features`, `pages`, `hooks`, `api`, `lib`, `types`, `styles`.
+- `packages/shared` — Zod schemas + inferred domain types (one Employee definition across the wire).
+- `packages/tsconfig`, `packages/eslint-config` — shared strict TS bases and ESLint flat config.
+
+Common commands (run from the repo root): `pnpm install`, `pnpm dev`, `pnpm test`, `pnpm lint`,
+`pnpm typecheck`, `pnpm build`. See [README.md](README.md) for setup and per-app commands.
+
 ## Status
 
-Early stage — requirements and assessment docs are in place; application code (backend, UI, seed
-script, tests) is not yet built. Update this file as the stack and structure are decided.
+Scaffold complete (project-setup plan, all phases): workspaces, shared config/domain packages, the
+api and web apps with a proven `/health` path and shared types, tests at every layer, and GitHub
+Actions CI. Feature work (DB schema + 10k seed, directory/CRUD, analytics, import/export, auth, UI)
+is next — see [docs/plans/](docs/plans/). Update this file as structure evolves.
