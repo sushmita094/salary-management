@@ -1,0 +1,29 @@
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import prettier from "eslint-config-prettier";
+import globals from "globals";
+
+/**
+ * Shared base ESLint flat config for the monorepo.
+ * Node-oriented; the React preset (./react.js) layers browser globals + hooks rules on top.
+ */
+export default tseslint.config(
+  { ignores: ["dist/**", "build/**", "coverage/**", "node_modules/**"] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: "module",
+      globals: { ...globals.node },
+    },
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+    },
+  },
+  // Keep Prettier last so it disables any stylistic rules that would fight the formatter.
+  prettier,
+);
