@@ -48,3 +48,27 @@ tool's authoritative docs. Linked the tech-stack doc from [CLAUDE.md](CLAUDE.md)
 added a "Stick to the stack" working agreement (no new libraries without updating the doc first;
 follow the official docs over memory). Also corrected the stale scope note in CLAUDE.md — auth is
 now in scope, so the exclusion list now reads payroll / FX / roles-permissions.
+
+> Write a plan for project setup - inside docs/plans/ folder
+> Everything exists in single monorepo
+> All our apps will be in apps folder
+> Let's use latest stable versions of all techs
+
+Created [docs/plans/01-project-setup.md](docs/plans/01-project-setup.md) — a phased plan to scaffold
+a single pnpm-workspaces monorepo: runnable apps under `apps/` (`api` = Express 5 + Prisma/SQLite,
+`web` = React 19 + Vite + Tailwind v4) and shared libraries under `packages/` (`shared` Zod
+schemas/types, plus shared tsconfig + ESLint config). Specifies latest-stable versions pinned via
+lockfile, six ordered/committable setup phases (root skeleton → shared config → shared package → api
+→ web → CI → DX/docs), root orchestration scripts, and risks (better-sqlite3 native build, Tailwind
+v4 CSS-first, ESLint 9 flat config, Express 5). Honoured the "stick to the stack" agreement by noting
+the monorepo tooling should be recorded in tech-stack.md.
+
+> also add creation of sub folders in src.
+> all routes, services, components, will reside in separate folders
+
+Expanded [docs/plans/01-project-setup.md](docs/plans/01-project-setup.md) with per-app `src/`
+sub-folder structure and a "Source-folder conventions" section: `apps/api/src` split into a layered
+`routes → controllers → services → repositories → db` (+ middleware/config/utils) one-directional
+dependency flow, `apps/web/src` split by UI concern (`components`, `features`, `pages`, `hooks`,
+`api`, `lib`, `types`, `styles`), and `packages/shared/src` into `schemas`/`types`. Folded folder
+creation (each with a placeholder so it commits) into the api and web scaffold phases.
