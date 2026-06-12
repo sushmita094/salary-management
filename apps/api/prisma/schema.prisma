@@ -12,18 +12,22 @@ datasource db {
 }
 
 model Employee {
-  id             String @id @default(uuid())
+  id             String   @id @default(uuid())
   name           String
-  email          String @unique
+  email          String   @unique
   country        String
   department     String
   jobTitle       String
+  level          String
   salaryAmount   Float
   salaryCurrency String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([country])
   @@index([department])
   @@index([jobTitle])
+  @@index([level])
   @@index([salaryAmount])
   @@index([name])
 }
