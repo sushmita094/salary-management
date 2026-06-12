@@ -104,3 +104,18 @@ CSV import (per-row validation, no silent corruption) + filter-round-tripping ex
 user auth gate (no roles), (8) hardening (helmet/CORS/rate-limit, env validation, API docs). Plus a
 target endpoint surface, new-dependency note (update tech-stack first), risks, and a whole-plan
 Definition of Done. No code written — planning only.
+
+> in backend plan, add implementation of swagger/open api as well. it should be
+> hosted on a link. i should be able to test every api through it.
+
+Extended [docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md) with
+interactive, hosted API docs. Added a cross-cutting practice (§2.6): the OpenAPI 3.1 spec is
+**generated from the shared Zod schemas** (no drift from the request-validation contract) via
+`@asteasolutions/zod-to-openapi`, with each phase registering its routes as it lands. Added a
+dedicated **Phase 9** — serve `GET /openapi.json` (raw spec) and `GET /docs` (Swagger UI via
+`swagger-ui-express`) from the Express app, so the docs live at `<deployed-origin>/docs`. Made
+"Try it out" genuinely work for **every** endpoint: Phase 7 auth now also accepts a `Bearer` token
+(alongside the httpOnly cookie) and the spec declares the scheme so Swagger's **Authorize** button
+can exercise protected routes (incl. `POST /import` upload); CORS/credentials kept aligned. Added a
+CI check that every registered route appears in the spec. Updated the endpoint table (`/docs`,
+`/openapi.json`), new-deps note, risks (httpOnly-cookie vs Swagger, spec drift), and the DoD.

@@ -80,6 +80,18 @@ These hold across all phases so individual phases don't re-litigate them.
 - A handful of **larger-dataset assertions** (e.g. analytics correctness, pagination bounds) run
   against a few-thousand-row fixture to prove the SQL scales and the math is right.
 
+### 2.6 API documentation as you go (OpenAPI from the Zod schemas)
+- The OpenAPI spec is **generated from the shared Zod schemas** — the same schemas that validate
+  requests (§2.2) — so docs can't drift from the contract. There is no hand-maintained spec file.
+- Each feature phase **registers its routes** (path, method, params, request body, responses,
+  security) in a single OpenAPI registry as that phase lands, rather than back-filling everything at
+  the end. The hosted Swagger UI is wired up once in **Phase 9** and simply renders the accumulated
+  registry.
+- **Mechanism (primary):** `@asteasolutions/zod-to-openapi` to attach metadata to the shared schemas
+  and build an OpenAPI 3.1 document, served interactively by `swagger-ui-express`. (Zod 4's native
+  `z.toJSONSchema` is the fallback for the schema half if we avoid the extra dep, but the registry
+  lib also gives us paths + security schemes, which is what makes "Try it out" work.)
+
 ---
 
 ## 3. Data model (the shape everything else depends on)
@@ -240,9 +252,16 @@ needs it, justified in the migration.
   store; fits single-service deploy) — or server session if a store is trivial; pick JWT-cookie for
   v1 and document it. Secret from env/config.
 - **`requireAuth` middleware:** gate **all** `/employees`, `/analytics`, `/import`, `/export` routes;
-  `/health` and `/auth/login` stay public. Unauthorised → 401 via the error envelope.
+  `/health`, `/auth/login`, and the docs routes (`/docs`, `/openapi.json`) stay public. Unauthorised
+  → 401 via the error envelope.
+- **Testability from Swagger (Phase 9):** declare the auth scheme in the OpenAPI registry so the
+  Swagger UI **Authorize** button can carry credentials to protected endpoints. Because the chosen
+  cookie is httpOnly, also **accept the same JWT as a `Bearer` Authorization header** (cookie *or*
+  header) — that makes "Try it out" trivially authorisable in Swagger while the cookie remains the
+  browser path. Document both. Login can echo the token so a tester can paste it into Authorize.
 - **Tests:** unit for credential verification + token issue/verify; integration that protected routes
-  return 401 without/with-bad token and 200 with a valid one, and the login happy/sad paths.
+  return 401 without/with-bad token and 200 with a valid one (via cookie **and** Bearer), and the
+  login happy/sad paths.
 - **Done when:** no protected route is reachable without a valid session; login/logout work; secrets
   come from config, never code.
 
@@ -256,11 +275,44 @@ needs it, justified in the migration.
   logged once in the central handler; no secrets/PII in logs.
 - **Config hardening:** validate required env at boot (fail fast if `JWT_SECRET`/`DATABASE_URL`
   missing) by parsing `process.env` through a Zod config schema in `config/`.
-- **API documentation:** a concise endpoint reference (README section or a generated OpenAPI doc
-  derived from the Zod schemas) listing routes, params, and response shapes.
+- **API documentation:** the interactive OpenAPI/Swagger UI is its own deliverable — see **Phase 9**.
 - **Graceful shutdown & DB lifecycle:** close Prisma/SQLite cleanly on `SIGTERM`/`SIGINT`.
 - **Done when:** protected, header-hardened, rate-limited where it matters; misconfig fails fast;
-  endpoints are documented; the full suite (`pnpm test`), `pnpm lint`, `pnpm typecheck` are green.
+  the full suite (`pnpm test`), `pnpm lint`, `pnpm typecheck` are green.
+
+### Phase 9 — OpenAPI spec & hosted interactive Swagger UI
+**Goal:** a hosted documentation page where the HR Manager / reviewer can **see and exercise every
+endpoint** ("Try it out"), generated from the same Zod schemas that validate requests so docs never
+drift from the contract.
+
+- **Spec generation (from Zod, single source of truth):** finalise the OpenAPI 3.1 document built
+  from the per-phase registry (§2.6) via `@asteasolutions/zod-to-openapi`. Every route contributes
+  its params, request body, response schemas (success envelope + `{ error }`), status codes, tags
+  (Employees / Analytics / Import-Export / Auth), and security requirement. Servers list includes
+  local dev and the deployed base URL.
+- **Hosted endpoints (served by the Express app itself):**
+  - `GET /openapi.json` — the raw spec (public).
+  - `GET /docs` — interactive **Swagger UI** (`swagger-ui-express`) rendering that spec (public).
+  Because the API and docs are one Express service, the docs are reachable at `<host>/docs` wherever
+  the service is deployed — **the link is just the deployed origin + `/docs`** (actual public URL is
+  set by the deployment plan; locally it's `http://localhost:<port>/docs`).
+- **Make "Try it out" actually work end to end:**
+  - Declare the **security scheme** (Bearer JWT, plus the cookie scheme) so the **Authorize** button
+    lets the tester authenticate once and then call every protected route (per Phase 7's cookie-or-
+    Bearer support).
+  - Configure Swagger UI to send credentials (`withCredentials`) and target the correct server so
+    same-origin cookie auth also works after `POST /auth/login`.
+  - Ensure CORS (Phase 8) permits the docs origin so requests from the UI aren't blocked.
+  - Document the flow on the page: log in (or paste the echoed token into Authorize) → call any
+    endpoint, including file upload for `POST /import`.
+- **Keep it honest:** a CI/test check that the spec **builds** and that every registered route is
+  represented (so a new route without docs fails the check), keeping coverage at "every API".
+- **Tests:** integration that `GET /openapi.json` returns a valid OpenAPI document containing all
+  routes, and that `GET /docs` serves the UI (200/HTML). A smoke check that a protected route is
+  callable through the spec's Bearer scheme.
+- **Done when:** visiting `<host>/docs` shows every endpoint grouped by tag, and a reviewer can
+  authenticate via **Authorize** and successfully execute **every** endpoint (incl. import upload)
+  from the page; the spec is generated from the Zod schemas and the CI coverage check is green.
 
 ---
 
@@ -282,6 +334,8 @@ needs it, justified in the migration.
 | GET    | `/analytics/distribution`  | yes  | Pay bands / buckets. |
 | POST   | `/import`                  | yes  | Excel/CSV upload; per-row validation report. |
 | GET    | `/export`                  | yes  | Filtered export (CSV/XLSX), round-trips with import. |
+| GET    | `/openapi.json`            | no   | Generated OpenAPI 3.1 spec (from Zod schemas). |
+| GET    | `/docs`                    | no   | Interactive Swagger UI — "Try it out" for every endpoint. |
 
 ---
 
@@ -289,9 +343,10 @@ needs it, justified in the migration.
 
 Per the working agreement, [../tech-stack.md](../tech-stack.md) is updated *first* with reasoning for
 each. Already-listed: Faker, SheetJS/`csv-parse`, Zod, Supertest/Vitest. **New to record:** the
-password-hashing lib (bcrypt/argon2), the JWT/cookie libs, and the hardening middleware
-(`helmet`, CORS, rate-limit, multipart parser e.g. `multer`/`busboy`). Each gets a one-line "why" in
-the doc; none pulls in excluded scope (payroll/FX/roles).
+password-hashing lib (bcrypt/argon2), the JWT/cookie libs, the hardening middleware
+(`helmet`, CORS, rate-limit, multipart parser e.g. `multer`/`busboy`), and the **API-docs stack**
+(`@asteasolutions/zod-to-openapi` for the spec + `swagger-ui-express` for the hosted UI). Each gets a
+one-line "why" in the doc; none pulls in excluded scope (payroll/FX/roles).
 
 ---
 
@@ -306,6 +361,11 @@ the doc; none pulls in excluded scope (payroll/FX/roles).
   a false global total (FX is deliberately out of scope, requirements §6).
 - **Import memory.** Stream rows; don't `JSON`-buffer a 10k-row file. Transactionally batch writes.
 - **Auth minimalism.** A gate, not an access-control system (requirements §5.5) — resist adding roles.
+- **Swagger + httpOnly cookie.** "Try it out" can't read an httpOnly cookie, so protected calls would
+  fail to authorise from the UI on cookie alone — hence Phase 7 also accepts a `Bearer` token and the
+  spec declares that scheme, so the **Authorize** button works. Keep CORS/credentials aligned (Phase 8/9).
+- **Spec drift.** Risk that docs lag the code; mitigated by generating the spec **from the Zod
+  schemas** and a CI check that every registered route appears in the spec (Phase 9).
 - **Prisma 7 / better-sqlite3.** Migrations + the driver adapter are already wired; new migrations
   follow the same flow, and the native module must match the CI Node version (see scaffold §7).
 
@@ -322,6 +382,8 @@ the doc; none pulls in excluded scope (payroll/FX/roles).
   (computed in SQL, never in Node).
 - `pnpm test` (unit + integration at every layer), `pnpm lint`, `pnpm typecheck` are green locally
   and in CI; the endpoint surface in §5 is documented.
+- **Hosted Swagger UI at `<host>/docs`** renders every endpoint from the Zod-generated OpenAPI spec,
+  and a reviewer can **Authorize** and execute **every** API (incl. import upload) from the page.
 - `docs/tech-stack.md` records any new deps; `CLAUDE.md` **Status** is updated to "backend feature-
   complete"; this work's prompts are appended to `PROMPTS.md`.
 
