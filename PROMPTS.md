@@ -89,3 +89,18 @@ Decisions surfaced during the build: installed **pnpm** (corepack absent) and sw
 to **Node 22 LTS** because the latest **Prisma 7** does not support the machine's Node 25; confirmed
 Prisma 7's new driver-adapter architecture with the user (chose latest over pinning Prisma 6).
 Verified each phase with typecheck/lint/test and an end-to-end `/api/health` proxy check.
+
+> write a backend implementation plan in docs/plans folder, phase wise.
+> it should be complete backend development. dont code yet. just plan.
+
+Wrote [docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md) — a
+phase-wise plan for the complete backend, building on the scaffold (layered Express 5 + Prisma 7 /
+better-sqlite3, minimal Employee model, stub seed, shared Zod types). Cross-cutting decisions
+(response/error envelope, boundary validation, the 10k "compute in SQL" rule, layering, per-layer
+TDD) settled once up front, then eight independently committable phases: (1) domain model + shared
+contracts, (2) idempotent 10k Faker seed, (3) directory list with paginate/search/filter/sort,
+(4) detail + CRUD, (5) analytics incl. in-SQL median/distribution reported per-currency, (6) Excel/
+CSV import (per-row validation, no silent corruption) + filter-round-tripping export, (7) single-
+user auth gate (no roles), (8) hardening (helmet/CORS/rate-limit, env validation, API docs). Plus a
+target endpoint surface, new-dependency note (update tech-stack first), risks, and a whole-plan
+Definition of Done. No code written — planning only.
