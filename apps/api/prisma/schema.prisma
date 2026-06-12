@@ -1,0 +1,29 @@
+// Prisma schema for the ACME Salary Management System.
+// SQLite datasource (see docs/tech-stack.md §3). Indexes mirror the columns the
+// directory filters/sorts by, so the list and aggregates stay responsive at ~10k rows.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Employee {
+  id             String @id @default(uuid())
+  name           String
+  email          String @unique
+  country        String
+  department     String
+  jobTitle       String
+  salaryAmount   Float
+  salaryCurrency String
+
+  @@index([country])
+  @@index([department])
+  @@index([jobTitle])
+  @@index([salaryAmount])
+  @@index([name])
+}

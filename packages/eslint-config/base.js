@@ -8,7 +8,7 @@ import globals from "globals";
  * Node-oriented; the React preset (./react.js) layers browser globals + hooks rules on top.
  */
 export default tseslint.config(
-  { ignores: ["dist/**", "build/**", "coverage/**", "node_modules/**"] },
+  { ignores: ["dist/**", "build/**", "coverage/**", "node_modules/**", "**/generated/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
