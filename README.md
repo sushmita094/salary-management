@@ -43,10 +43,18 @@ leaves exactly 10,000 rows. It also creates the single **HR-Manager** login from
 
 ## Authentication
 
-All data routes (`/employees`, `/analytics`, `/import`, `/export`) require a session; `/health` and
-`/auth/login` are public. `POST /auth/login` returns a JWT and sets it as an httpOnly cookie; the
-same token is also accepted as an `Authorization: Bearer <token>` header (so the Swagger UI can call
-protected endpoints). Set a strong `JWT_SECRET` for any real deployment.
+All data routes (`/employees`, `/analytics`, `/import`, `/export`) require a session; `/health`,
+`/auth/login`, and the docs (`/docs`, `/openapi.json`) are public. `POST /auth/login` returns a JWT
+and sets it as an httpOnly cookie; the same token is also accepted as an `Authorization: Bearer
+<token>` header (so the Swagger UI can call protected endpoints). Set a strong `JWT_SECRET` for any
+real deployment.
+
+## API documentation
+
+Interactive **Swagger UI** is served by the API itself at **`http://localhost:3000/docs`** (raw spec
+at `/openapi.json`), generated from the same Zod schemas that validate requests. To exercise
+protected endpoints: call `POST /auth/login`, copy the returned `token`, click **Authorize**, paste
+it, then "Try it out" on any endpoint — including the `POST /import` file upload.
 
 ## Running
 

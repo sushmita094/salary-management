@@ -42,3 +42,9 @@ export class UnauthorizedError extends AppError {
   readonly status = 401;
   readonly code = "UNAUTHORIZED";
 }
+
+/** 429 — the client has sent too many requests (rate limited). */
+export class TooManyRequestsError extends AppError {
+  readonly status = 429;
+  readonly code = "TOO_MANY_REQUESTS";
+}

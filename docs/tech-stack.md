@@ -158,6 +158,18 @@ noted fast-follow if a true row-streaming CSV path is ever needed for much large
 Zod schemas validate API inputs and import rows, and the inferred types are shared with the
 frontend — one definition of an "Employee" across the wire.
 
+### API documentation — OpenAPI from Zod, hosted Swagger UI
+
+The OpenAPI 3.0 document is generated from the **same shared Zod schemas** that validate requests, so
+the docs can't drift from the contract. The schema half uses **Zod 4's native `z.toJSONSchema`**
+(`target: "openapi-3.0"`) rather than the `@asteasolutions/zod-to-openapi` registry — that library
+predates Zod 4, and Zod's built-in converter keeps the single-source-of-truth without an extra
+dependency. A small hand-assembled path/security layer adds the routes, tags, and the Bearer + cookie
+security schemes. **swagger-ui-express** serves an interactive UI at `/docs` (and the raw spec at
+`/openapi.json`), with the **Authorize** button wired for the Bearer token so every protected
+endpoint — including the `POST /import` file upload — is executable from the page. A test asserts the
+spec covers every registered route.
+
 ### Authentication
 
 A single trusted HR-Manager user class behind a simple session/token gate (requirements §5.5). No
@@ -170,6 +182,17 @@ session store, which fits the single-service deploy. The token is *also* accepte
 Authorization header so the hosted Swagger UI's **Authorize** button can exercise protected routes
 (the httpOnly cookie is unreadable from JS). `requireAuth` verifies the token statelessly (no DB
 round-trip) and gates every data route; the secret comes from config/env.
+
+### Security & hardening
+
+Production-credible defaults, each justified rather than kitchen-sink: **helmet** sets sensible
+security response headers; **cors** is scoped to the web origin with credentials enabled (for the
+auth cookie); the JSON body parser has a size limit; and **express-rate-limit** throttles
+`POST /auth/login` to blunt brute-force attempts. Required env is validated at boot through a **Zod**
+config schema — the process **fails fast** if e.g. `JWT_SECRET` is missing (or left at the dev
+default) in production. Request logging is a small in-house structured (JSON) middleware — no extra
+dependency — and the central error handler logs unexpected failures once, without leaking secrets/PII.
+The server closes Prisma/SQLite cleanly on `SIGTERM`/`SIGINT`.
 
 ### Monorepo & tooling
 
@@ -269,6 +292,18 @@ follow these, not memory or blog posts.**
 - **bcryptjs** (password hashing) — https://github.com/dcodeIO/bcrypt.js
 - **jsonwebtoken** (JWT) — https://github.com/auth0/node-jsonwebtoken
 - **cookie-parser** — https://github.com/expressjs/cookie-parser
+
+### Security & hardening
+
+- **helmet** (security headers) — https://helmetjs.github.io/
+- **cors** — https://github.com/expressjs/cors
+- **express-rate-limit** — https://express-rate-limit.mintlify.app/
+
+### API documentation
+
+- **Zod `toJSONSchema`** (OpenAPI from schemas) — https://zod.dev/json-schema
+- **swagger-ui-express** — https://github.com/scottie1984/swagger-ui-express
+- **OpenAPI Specification** — https://spec.openapis.org/oas/v3.0.3
 
 ### Testing
 

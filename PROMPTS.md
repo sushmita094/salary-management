@@ -287,3 +287,51 @@ test helper. Verified over real HTTP (401 unauthenticated, 401 wrong password, l
 cookie, 200 via Bearer and cookie). Documented env vars + login in `.env.example` and the README.
 `pnpm --filter api` typecheck / lint / test (now **87**) and shared tests (**26**) all green. Not
 committed, per instruction.
+
+> lets implement phase 8 of backend plan
+
+Implemented **Phase 8 — Hardening & API polish** of
+[docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md), test-first.
+Updated [docs/tech-stack.md](docs/tech-stack.md) first with a "Security & hardening" section and the
+new deps + reasoning: **helmet** (security headers), **cors** (scoped to the web origin, credentials
+on for the auth cookie), **express-rate-limit** (brute-force guard on `POST /auth/login`); request
+logging is a small in-house JSON middleware (no extra dep). Rewrote
+[apps/api/src/config/env.ts](apps/api/src/config/env.ts) to parse `process.env` through a **Zod
+schema** via a pure, testable `loadConfig(env)` that **fails fast** in production when `JWT_SECRET`
+is missing/left at the dev default or `DATABASE_URL` is missing (dev/test keep working defaults).
+Added a `TooManyRequestsError` (429) and a `loginRateLimiter` whose handler routes through the
+central error envelope; a `requestLogger` middleware (method/path/status/duration, no bodies/cookies/
+PII, skipped under test); wired `helmet`, `cors`, and a JSON body-size limit into
+[app.ts](apps/api/src/app.ts); and added **graceful shutdown** (close HTTP server + `prisma.$disconnect`
+on SIGTERM/SIGINT) in [index.ts](apps/api/src/index.ts). Tests: unit for `loadConfig` (defaults,
+PORT coercion, prod fail-fast on missing secret/db, valid prod env); integration asserting helmet
+headers + `x-powered-by` removed, CORS allow-origin/credentials, and the login limiter returning a
+429 envelope after the threshold. Smoke-tested over real HTTP (hardened headers, CORS, 10×400→429,
+JSON request log line, "shutting down gracefully" on SIGTERM, and a production boot aborting with
+"JWT_SECRET must be set…"). `pnpm --filter api` typecheck / lint / test (now **95**) and shared
+tests (**26**) all green. Not committed, per instruction.
+
+> lets implement phase 9 of backend plan
+
+Implemented **Phase 9 — OpenAPI spec & hosted interactive Swagger UI** of
+[docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md), test-first — the
+final backend phase. Updated [docs/tech-stack.md](docs/tech-stack.md) first: chose **Zod 4's native
+`z.toJSONSchema`** (`target: "openapi-3.0"`) over `@asteasolutions/zod-to-openapi` (which predates
+Zod 4) for the schema half, keeping the single source of truth with no extra dep, plus
+**swagger-ui-express** for the hosted UI. Built an OpenAPI 3.0.3 document
+([apps/api/src/openapi/document.ts](apps/api/src/openapi/document.ts)) from the shared schemas via
+small helpers ([openapi/helpers.ts](apps/api/src/openapi/helpers.ts)) that convert request/response
+bodies and expand object schemas into query/path parameters (defaulted params correctly marked
+optional); declared `bearerAuth` + `cookieAuth` security schemes, tags, and servers. Served
+`GET /openapi.json` (raw spec) and `GET /docs` (Swagger UI) publicly
+([routes/docs.ts](apps/api/src/routes/docs.ts)), relaxing the strict global helmet CSP **only** for
+the docs pages so the UI's inline assets load, and enabling `withCredentials`/`persistAuthorization`
+so Authorize works. Tests: the spec is a valid 3.0 doc with both security schemes/tags; a
+**coverage check walks every feature router and asserts each route is documented** (a new
+undocumented route fails CI); protected routes carry the security requirement while `/auth/login`
+is public; and `/docs` serves the Swagger HTML. Also resolved a pnpm `allowBuilds` prompt for the
+transitive `@scarf/scarf` (telemetry → `false`). Smoke-tested over real HTTP: 11 documented paths,
+both security schemes, `/import` as `multipart/form-data`, `/employees` query params auto-derived,
+and the Swagger UI page + assets loading. Updated the README (docs link + Authorize flow) and marked
+[CLAUDE.md](CLAUDE.md) **backend feature-complete**. `pnpm --filter api` typecheck / lint / test (now
+**99**) and shared tests (**26**) all green. Not committed, per instruction.

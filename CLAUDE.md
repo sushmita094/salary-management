@@ -54,7 +54,13 @@ Common commands (run from the repo root): `pnpm install`, `pnpm dev`, `pnpm test
 
 ## Status
 
-Scaffold complete (project-setup plan, all phases): workspaces, shared config/domain packages, the
-api and web apps with a proven `/health` path and shared types, tests at every layer, and GitHub
-Actions CI. Feature work (DB schema + 10k seed, directory/CRUD, analytics, import/export, auth, UI)
-is next — see [docs/plans/](docs/plans/). Update this file as structure evolves.
+**Backend feature-complete** ([02-backend-implementation.md](docs/plans/02-backend-implementation.md),
+all 9 phases): the data model + idempotent 10k seed, employee directory (paginate/search/filter/sort),
+full CRUD, compensation analytics (avg **and** in-SQL median, distribution, per-currency), bulk
+Excel/CSV import (per-row validation, no silent corruption) + filter-round-tripping export, the
+single-user auth gate (JWT cookie *or* Bearer), hardening (helmet/CORS/rate-limit, env fail-fast,
+graceful shutdown), and a hosted Swagger UI at `/docs` generated from the shared Zod schemas. All
+layers tested (Vitest + Supertest); `pnpm test`/`lint`/`typecheck` green.
+
+The **frontend** feature work (React UI: directory table, forms, analytics dashboard) is next — see
+[docs/plans/](docs/plans/). Update this file as structure evolves.
