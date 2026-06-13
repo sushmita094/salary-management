@@ -417,3 +417,29 @@ paging each update the query and refetch with the right params; empty + retryabl
 rows link to `/employees/:id`. Added a default `/employees` MSW handler so auth/routing suites that
 land on the Directory still resolve. `pnpm --filter web` typecheck / lint / test (now **26**) and
 `build` green, plus repo-wide typecheck/lint. Not committed, per instruction.
+
+> lets implement frontend plan phase 4
+
+Implemented **Phase 4 — Employee detail & CRUD** of
+[docs/plans/03-frontend-implementation.md](docs/plans/03-frontend-implementation.md), test-first.
+Added the **Dialog primitive deferred from Phase 1** — `@radix-ui/react-dialog` (the headless lib
+already named in tech-stack) wrapped as an accessible `ConfirmDialog`
+([components/ui/Dialog.tsx](apps/web/src/components/ui/Dialog.tsx), focus-trap/Escape/labelling).
+Extended the API module with `fetchEmployee`/`create`/`update`/`delete`
+([api/employees.ts](apps/web/src/api/employees.ts)); a detail query
+([useEmployee.ts](apps/web/src/features/employees/useEmployee.ts), `retry: false` so a 404 surfaces
+at once); and **mutation hooks** ([employeeMutations.ts](apps/web/src/features/employees/employeeMutations.ts))
+that invalidate the directory list + analytics keys (and the detail key on edit) on success. Built a
+shared **EmployeeForm** ([features/employees/EmployeeForm.tsx](apps/web/src/features/employees/EmployeeForm.tsx))
+bound to the **shared `createEmployeeSchema`** with **server-error mapping** — 409 → the email field,
+400 `details` → the offending fields, else a form-level error. Three pages: **detail** (local-currency
+fields, 404 not-found state, Edit link + Delete-with-confirm), **create**, and **edit** (pre-filled,
+PUT); each does toast + navigate on success. Wired the `/employees/new`, `/employees/:id`,
+`/employees/:id/edit` routes and a "New employee" button on the Directory. Tests (RTL+MSW): detail
+renders + 404; create posts the right body and navigates (with success toast); client validation
+blocks submit without calling the API; a 409 maps onto the email field; edit loads → PUTs the change →
+navigates; delete confirms in the dialog, calls DELETE, and returns to the directory. **Decision
+(noted):** both create *and* edit validate with `createEmployeeSchema` (the form always collects the
+full record; the backend's PUT accepts it since its `updateEmployeeSchema` is partial). `pnpm --filter
+web` typecheck / lint / test (now **33**) and `build` green, plus repo-wide typecheck/lint. Not
+committed, per instruction.

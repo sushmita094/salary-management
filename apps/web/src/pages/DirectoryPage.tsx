@@ -1,4 +1,5 @@
 import type { EmployeeQuery } from "@acme/shared";
+import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -23,7 +24,12 @@ export function DirectoryPage() {
 
   return (
     <section className="space-y-4">
-      <h1 className="text-xl font-semibold text-gray-900">Directory</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-gray-900">Directory</h1>
+        <Link to="/employees/new">
+          <Button>New employee</Button>
+        </Link>
+      </div>
 
       <FilterBar query={query} update={update} />
 
