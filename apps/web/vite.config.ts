@@ -17,6 +17,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // A real origin so relative `/api/*` fetches resolve (MSW intercepts them).
+    environmentOptions: { jsdom: { url: "http://localhost:3000/" } },
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
     exclude: ["e2e/**", "node_modules/**"],

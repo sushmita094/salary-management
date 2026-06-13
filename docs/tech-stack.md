@@ -134,9 +134,11 @@ stay focused on rendering, not fetch plumbing.
 
 **react-router-dom** drives the SPA's pages and route guards (a single-user dashboard needs client
 routing, not SSR). **clsx** + **tailwind-merge** compose conditional Tailwind classes without
-specificity clashes (a tiny `cn()` helper) — the ergonomic glue for the in-house design system. Forms
-(`react-hook-form` + `@hookform/resolvers`) and test mocking (`msw`) are added in the phases that
-first need them.
+specificity clashes (a tiny `cn()` helper) — the ergonomic glue for the in-house design system.
+**react-hook-form** + **@hookform/resolvers** power forms, bound via the resolver to the **shared**
+Zod schemas (`loginSchema`, `createEmployeeSchema`, …) so client and server validate identically.
+**msw** (Mock Service Worker) backs component/feature tests with realistic response envelopes — no real
+network — so tests exercise the same `{ data }` / `{ error }` shapes the API returns.
 
 ---
 
@@ -288,6 +290,8 @@ follow these, not memory or blog posts.**
 - **TanStack Query** — https://tanstack.com/query/latest/docs/framework/react/overview
 - **React Router** — https://reactrouter.com/
 - **clsx** / **tailwind-merge** — https://github.com/lukeed/clsx · https://github.com/dcastil/tailwind-merge
+- **React Hook Form** + **@hookform/resolvers** — https://react-hook-form.com/ · https://github.com/react-hook-form/resolvers
+- **MSW** (Mock Service Worker) — https://mswjs.io/
 
 ### Validation & data movement
 

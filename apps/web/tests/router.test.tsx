@@ -1,40 +1,30 @@
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
-import { AppRoutes } from "../src/app/router";
-
-function renderAt(path: string) {
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <AppRoutes />
-    </MemoryRouter>,
-  );
-}
+import { screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
+import { authenticatedMe } from "./msw/handlers";
+import { server } from "./msw/server";
+import { renderApp } from "./utils";
 
 describe("app routing & shell", () => {
-  it("renders the shell with primary nav and the routed page", () => {
-    renderAt("/employees");
+  // These routes are guarded, so sign the session in for the shell assertions.
+  beforeEach(() => server.use(authenticatedMe()));
 
-    const nav = screen.getByRole("navigation", { name: "Primary" });
-    expect(nav).toBeInTheDocument();
+  it("renders the shell with primary nav and the routed page", async () => {
+    renderApp("/employees");
+
+    expect(await screen.findByRole("navigation", { name: "Primary" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Directory" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Analytics" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Directory" })).toBeInTheDocument();
   });
 
-  it("redirects the index route to the directory", () => {
-    renderAt("/");
-    expect(screen.getByRole("heading", { name: "Directory" })).toBeInTheDocument();
+  it("redirects the index route to the directory", async () => {
+    renderApp("/");
+    expect(await screen.findByRole("heading", { name: "Directory" })).toBeInTheDocument();
   });
 
-  it("shows the not-found page (inside the shell) for an unknown route", () => {
-    renderAt("/does-not-exist");
-    expect(screen.getByText("Page not found")).toBeInTheDocument();
+  it("shows the not-found page (inside the shell) for an unknown route", async () => {
+    renderApp("/does-not-exist");
+    expect(await screen.findByText("Page not found")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
-  });
-
-  it("renders the login route outside the shell (no nav)", () => {
-    renderAt("/login");
-    expect(screen.queryByRole("navigation", { name: "Primary" })).not.toBeInTheDocument();
   });
 });

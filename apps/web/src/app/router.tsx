@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
+import { RequireAuth } from "../features/auth/RequireAuth";
 import { AnalyticsPage } from "../pages/AnalyticsPage";
 import { DirectoryPage } from "../pages/DirectoryPage";
 import { ImportExportPage } from "../pages/ImportExportPage";
@@ -16,12 +17,14 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
 
-      <Route element={<AppShell />}>
-        <Route index element={<Navigate to="/employees" replace />} />
-        <Route path="employees" element={<DirectoryPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="import-export" element={<ImportExportPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+      <Route element={<RequireAuth />}>
+        <Route element={<AppShell />}>
+          <Route index element={<Navigate to="/employees" replace />} />
+          <Route path="employees" element={<DirectoryPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="import-export" element={<ImportExportPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
       </Route>
     </Routes>
   );

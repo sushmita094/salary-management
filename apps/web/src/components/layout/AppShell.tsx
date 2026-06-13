@@ -1,5 +1,7 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../../features/auth/auth-context";
 import { cn } from "../../lib/cn";
+import { Button } from "../ui/Button";
 
 const NAV = [
   { to: "/employees", label: "Directory" },
@@ -13,6 +15,14 @@ const NAV = [
  * sign-out control are added with the auth layer (Phase 2).
  */
 export function AppShell() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-gray-200 bg-white">
@@ -36,6 +46,12 @@ export function AppShell() {
               </NavLink>
             ))}
           </nav>
+          <div className="ml-auto flex items-center gap-3">
+            {user && <span className="text-sm text-gray-500">{user.email}</span>}
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
 

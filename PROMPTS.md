@@ -365,3 +365,29 @@ keeps `/login` outside it; primitives (Button/EmptyState/Toast) render and behav
 shell. **Deviations (noted):** the `Dialog` primitive is deferred to Phase 4 (its first real use —
 delete confirm) to avoid pulling a headless lib early. `pnpm --filter web` typecheck / lint / test
 (**14**) and `build` all green, plus repo-wide typecheck/lint. Not committed, per instruction.
+
+> phase 2 next
+
+Implemented **Phase 2 — Authentication UI & route protection** of
+[docs/plans/03-frontend-implementation.md](docs/plans/03-frontend-implementation.md), test-first.
+Updated [docs/tech-stack.md](docs/tech-stack.md) first with the new deps + reasoning
+(**react-hook-form** + **@hookform/resolvers** bound to the shared Zod schemas; **msw** for
+realistic test mocking). Built the **auth API module** ([api/auth.ts](apps/web/src/api/auth.ts) —
+`me`/`login`/`logout`, with the cookie-probe and login opting out of the global 401 redirect), an
+**AuthProvider** ([features/auth/AuthProvider.tsx](apps/web/src/features/auth/AuthProvider.tsx)) that
+bootstraps the session from `GET /auth/me` via TanStack Query (cookie is the source of truth — no
+token in JS), exposes `user`/`isResolving`/`login`/`logout`, and registers the central
+`setUnauthorizedHandler` so a mid-session 401 clears auth and routes to /login; a **RequireAuth**
+guard (spinner while resolving → `/login` with the intended destination preserved → `<Outlet/>`); a
+**LoginPage** (RHF + `zodResolver(loginSchema)`, inline 401 "invalid email or password" / 429
+friendly message, submit spinner) that redirects to the originally requested route; and **sign-out**
+in the app shell (email + button → `POST /auth/logout` → /login). Wired `AuthProvider` into `App`
+and wrapped the shell routes in `RequireAuth`. Test infra: an **MSW** server + handlers
+([tests/msw/](apps/web/tests/msw/)) and a `renderApp` provider harness
+([tests/utils.tsx](apps/web/tests/utils.tsx)); set an explicit jsdom origin so relative `/api`
+fetches resolve. Tests (RTL+MSW): guard redirects an unauthenticated deep link to login; valid
+credentials sign in and land on the Directory (shell + email shown); invalid credentials show the
+inline error; the form validates before calling the API; sign-out returns to login; and the routing
+suite now asserts the shell through the guard. `pnpm --filter web` typecheck / lint / test (now
+**18**) and `build` green, plus repo-wide typecheck/lint. Also set `msw` to `false` in the pnpm
+`allowBuilds` (node tests don't need its browser worker). Not committed, per instruction.
