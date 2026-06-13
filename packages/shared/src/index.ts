@@ -12,6 +12,21 @@ export {
 export { paginationSchema, paginatedSchema } from "./schemas/pagination.js";
 export { errorSchema } from "./schemas/error.js";
 export { employeeParamsSchema } from "./schemas/params.js";
+export {
+  ANALYTICS_DIMENSIONS,
+  MIN_BUCKETS,
+  MAX_BUCKETS,
+  DEFAULT_BUCKETS,
+  analyticsDimensionParamsSchema,
+  distributionQuerySchema,
+  currencyRollupSchema,
+  analyticsSummarySchema,
+  segmentStatSchema,
+  analyticsByDimensionSchema,
+  distributionBandSchema,
+  currencyDistributionSchema,
+  analyticsDistributionSchema,
+} from "./schemas/analytics.js";
 
 export type {
   Employee,
@@ -23,3 +38,14 @@ export type {
   Paginated,
   ApiError,
 } from "./types/employee.js";
+export type {
+  AnalyticsDimension,
+  DistributionQuery,
+  CurrencyRollup,
+  AnalyticsSummary,
+  SegmentStat,
+  AnalyticsByDimension,
+  DistributionBand,
+  CurrencyDistribution,
+  AnalyticsDistribution,
+} from "./types/analytics.js";

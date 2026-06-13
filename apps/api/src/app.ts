@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import { errorHandler } from "./middleware/error-handler.js";
+import { analyticsRouter } from "./routes/analytics.js";
 import { employeesRouter } from "./routes/employees.js";
 import { healthRouter } from "./routes/health.js";
 
@@ -11,6 +12,7 @@ export function createApp(): Express {
 
   app.use("/health", healthRouter);
   app.use("/employees", employeesRouter);
+  app.use("/analytics", analyticsRouter);
 
   app.use(errorHandler);
 

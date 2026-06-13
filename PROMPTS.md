@@ -206,3 +206,30 @@ Prisma.PrismaClientKnownRequestError`. The service exposes `getEmployee` (404 if
 email-collision on update) / 204 + DB-gone assertion. Verified the full lifecycle over real HTTP
 against a throwaway DB (201 → 409 → 200 → 200 → 204 → 404). `pnpm --filter api` typecheck / lint /
 test (now **46**) and shared tests (20) all green. Not committed, per instruction.
+
+> lets implement phase 5 backend plan
+
+Implemented **Phase 5 — Compensation analytics** of
+[docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md), test-first.
+Three read-only endpoints, all computed **in SQL** (never loading rows into Node) and reported
+**per currency** (FX is out of scope, so figures are never summed across currencies):
+`GET /analytics/summary` (headcount overall + total/avg/median per currency),
+`GET /analytics/by/:dimension` (`department|country|jobTitle|level` → per-segment headcount/avg/
+median/min/max), and `GET /analytics/distribution` (equal-width pay-band histogram per currency,
+optional currency/segment scoping + `bucketCount`). The hard part — **median in SQLite**, which has
+no `PERCENTILE` — is done with window functions in
+[apps/api/src/repositories/analytics.repository.ts](apps/api/src/repositories/analytics.repository.ts):
+rank rows within each partition (`ROW_NUMBER`/`COUNT(*) OVER`) and average the value(s) at position
+`(cnt+1)/2`,`(cnt+2)/2` (integer division), which collapses to the middle row(s) for odd/even
+counts; aggregates and bucketing use `GROUP BY` + a `CASE`/`width_bucket`-style bucket with the top
+value clamped into the final band. Shared Zod request + response schemas live in
+[packages/shared/src/schemas/analytics.ts](packages/shared/src/schemas/analytics.ts) (rebuilt into
+dist); the dynamic `:dimension` column is whitelisted before interpolation, and the band-boundary
+reconstruction is a pure, unit-tested helper
+([apps/api/src/utils/distribution.ts](apps/api/src/utils/distribution.ts)). Tests: unit for the
+band math (equal-width, empty-bucket fill, float-pinned max, min==max collapse); integration against
+a **hand-computed two-currency fixture** asserting exact avg/median/totals/bands and per-currency
+separation, plus a 3k-row scale suite of fixture-independent invariants (headcounts reconcile,
+median∈[min,max], band counts account for everyone). Smoke-tested on the real 10k seed: summary in
+~14ms, realistic right-skewed medians and histograms. `pnpm --filter api` typecheck / lint / test
+(now **59**) and shared tests all green. Not committed, per instruction.
