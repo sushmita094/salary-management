@@ -1,4 +1,4 @@
-import type { EmployeeQuery } from "@acme/shared";
+import type { CreateEmployee, EmployeeQuery, UpdateEmployee } from "@acme/shared";
 import { prisma } from "../db/client.js";
 
 /**
@@ -59,4 +59,27 @@ export function findEmployees(query: EmployeeQuery) {
 /** Total rows matching the query's filters (search/filter, ignoring pagination). */
 export function countEmployees(query: EmployeeQuery): Promise<number> {
   return prisma.employee.count({ where: buildWhere(query) });
+}
+
+/** A single employee by id, or `null` if none exists. */
+export function findEmployeeById(id: string) {
+  return prisma.employee.findUnique({ where: { id } });
+}
+
+/** Insert a new employee. Throws Prisma `P2002` on a duplicate email. */
+export function createEmployee(data: CreateEmployee) {
+  return prisma.employee.create({ data });
+}
+
+/**
+ * Update an existing employee with the provided (partial) fields. Throws Prisma
+ * `P2025` if the id doesn't exist and `P2002` on an email collision.
+ */
+export function updateEmployee(id: string, data: UpdateEmployee) {
+  return prisma.employee.update({ where: { id }, data });
+}
+
+/** Delete an employee by id. Throws Prisma `P2025` if it doesn't exist. */
+export function deleteEmployee(id: string) {
+  return prisma.employee.delete({ where: { id } });
 }

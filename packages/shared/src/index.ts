@@ -11,12 +11,14 @@ export {
 } from "./schemas/query.js";
 export { paginationSchema, paginatedSchema } from "./schemas/pagination.js";
 export { errorSchema } from "./schemas/error.js";
+export { employeeParamsSchema } from "./schemas/params.js";
 
 export type {
   Employee,
   CreateEmployee,
   UpdateEmployee,
   EmployeeQuery,
+  EmployeeParams,
   Pagination,
   Paginated,
   ApiError,

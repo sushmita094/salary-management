@@ -184,3 +184,25 @@ app's convention: `tsconfig.json` is now the editor/typecheck config (`noEmit: t
 emit config (`src` only, `rootDir`/`outDir`, excludes tests) wired to the `build` script. `pnpm
 typecheck` now also type-checks the tests; `build` still emits only `src` to `dist` (no `*.test.js`
 leaks). typecheck / build / lint / test (30) all green. Not committed, per instruction.
+
+> lets implement phase 4 backend plan
+
+Implemented **Phase 4 — Employee detail & CRUD** of
+[docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md), test-first,
+through the layered stack. Added an `id`-param schema to `@acme/shared`
+([packages/shared/src/schemas/params.ts](packages/shared/src/schemas/params.ts) — uuid, so a
+malformed id is a 400 before it hits the DB) plus its `EmployeeParams` type, and rebuilt the shared
+dist the api imports at runtime. Repository gained `findEmployeeById` / `createEmployee` /
+`updateEmployee` / `deleteEmployee`. A small **Prisma→domain error mapper**
+([apps/api/src/utils/prisma-errors.ts](apps/api/src/utils/prisma-errors.ts)) translates known write
+failures at the service boundary so raw Prisma errors never leak — `P2002` (unique) → 409
+`ConflictError`, `P2025` (missing) → 404 `NotFoundError` — via `instanceof
+Prisma.PrismaClientKnownRequestError`. The service exposes `getEmployee` (404 if absent),
+`createEmployee`, `updateEmployee` (partial), `deleteEmployee`; thin controllers + routes wire
+`GET /employees/:id`, `POST /employees` (201), `PUT /employees/:id` (partial), `DELETE
+/employees/:id` (204), each behind the `validate` middleware. Tests: unit for the error mapper
+(P2002 / P2025 / passthrough × 2), integration for every verb incl. 404 (unknown id) / 400
+(malformed id + invalid body with field details) / 409 (duplicate email on create *and*
+email-collision on update) / 204 + DB-gone assertion. Verified the full lifecycle over real HTTP
+against a throwaway DB (201 → 409 → 200 → 200 → 204 → 404). `pnpm --filter api` typecheck / lint /
+test (now **46**) and shared tests (20) all green. Not committed, per instruction.

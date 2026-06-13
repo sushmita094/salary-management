@@ -4,6 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../repositories/employee.repository.js", () => ({
   findEmployees: vi.fn(),
   countEmployees: vi.fn(),
+  findEmployeeById: vi.fn(),
+  createEmployee: vi.fn(),
+  updateEmployee: vi.fn(),
+  deleteEmployee: vi.fn(),
 }));
 
 import { countEmployees, findEmployees } from "../repositories/employee.repository.js";
