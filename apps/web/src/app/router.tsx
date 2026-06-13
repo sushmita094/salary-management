@@ -1,8 +1,11 @@
+import { lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "../components/layout/AppShell";
 import { RequireAuth } from "../features/auth/RequireAuth";
-import { AnalyticsPage } from "../pages/AnalyticsPage";
 import { DirectoryPage } from "../pages/DirectoryPage";
+
+// Code-split the chart-heavy analytics route so Recharts stays out of the initial bundle.
+const AnalyticsPage = lazy(() => import("../pages/AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
 import { EmployeeCreatePage } from "../pages/EmployeeCreatePage";
 import { EmployeeDetailPage } from "../pages/EmployeeDetailPage";
 import { EmployeeEditPage } from "../pages/EmployeeEditPage";

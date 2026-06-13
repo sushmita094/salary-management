@@ -443,3 +443,27 @@ navigates; delete confirms in the dialog, calls DELETE, and returns to the direc
 full record; the backend's PUT accepts it since its `updateEmployeeSchema` is partial). `pnpm --filter
 web` typecheck / lint / test (now **33**) and `build` green, plus repo-wide typecheck/lint. Not
 committed, per instruction.
+
+> lets implement frontend plan phase 5
+
+Implemented **Phase 5 — Compensation analytics dashboard** of
+[docs/plans/03-frontend-implementation.md](docs/plans/03-frontend-implementation.md), test-first.
+Added **Recharts** (already named in tech-stack). Built the analytics data layer
+([api/analytics.ts](apps/web/src/api/analytics.ts) + [useAnalytics.ts](apps/web/src/features/analytics/useAnalytics.ts):
+`useSummary`/`useByDimension`/`useDistribution`) and three feature views consuming the shared wire
+types: **SummaryCards** (per-currency total/average/**median**, headcount; money always in its own
+currency — there is deliberately **no cross-currency total**), **SegmentComparison** (a Recharts
+bar chart of **average vs median** per segment for the chosen dimension+currency, backed by an exact
+figures table incl. min/max for accessibility), and **DistributionChart** (a salary-band histogram
+with a band-count control, backed by a range/count table). The [AnalyticsPage](apps/web/src/pages/AnalyticsPage.tsx)
+composes them with a dimension toggle + currency selector (options derived from the summary's
+currencies) and first-class **loading skeletons / empty / retryable-error** states. Added a `formatMoney`
+helper. To keep the chart library out of the initial/login bundle (plan §2.1/§7), **code-split the
+AnalyticsPage** via `React.lazy` behind a `Suspense` boundary in the app shell — Recharts now ships
+as a separate ~104 kB-gzip chunk and the build size warning is gone. Tests (RTL+MSW): per-currency
+cards render incl. median **and a guard that the combined cross-currency total never appears**;
+switching the dimension refetches `by/:dimension`; switching currency re-renders the comparison for
+that currency; distribution bands map to the backing table and a band-count change refetches; plus
+empty and error states. Added a `ResizeObserver` polyfill to the test setup (jsdom lacks it; charts
+render empty and we assert on the backing tables). `pnpm --filter web` typecheck / lint / test (now
+**39**) and `build` (code-split) green, plus repo-wide typecheck/lint. Not committed, per instruction.

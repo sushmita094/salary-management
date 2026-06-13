@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/auth-context";
 import { cn } from "../../lib/cn";
 import { Button } from "../ui/Button";
+import { Spinner } from "../ui/Spinner";
 
 const NAV = [
   { to: "/employees", label: "Directory" },
@@ -56,7 +58,15 @@ export function AppShell() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Outlet />
+        <Suspense
+          fallback={
+            <div className="flex justify-center py-12">
+              <Spinner className="h-6 w-6 text-brand-600" />
+            </div>
+          }
+        >
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
