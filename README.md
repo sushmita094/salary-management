@@ -32,7 +32,13 @@ docs/         Requirements, assessment, tech stack, and plans
 pnpm install                 # installs deps; generates the Prisma client (postinstall)
 cp apps/api/.env.example apps/api/.env
 pnpm --filter api prisma:migrate   # creates apps/api/prisma/dev.db and applies migrations
+pnpm --filter api seed             # populates ~10,000 realistic employees (deterministic; runs in seconds)
 ```
+
+The seed is **idempotent and deterministic** — it wipes and re-inserts the same ~10,000 employees
+(fixed Faker seed) spread across 12 countries with their local currencies, 10 departments, and 8
+seniority levels, with a log-normal salary distribution per country/level. Re-running it always
+leaves exactly 10,000 rows.
 
 ## Running
 

@@ -119,3 +119,24 @@ dedicated **Phase 9** — serve `GET /openapi.json` (raw spec) and `GET /docs` (
 can exercise protected routes (incl. `POST /import` upload); CORS/credentials kept aligned. Added a
 CI check that every registered route appears in the spec. Updated the endpoint table (`/docs`,
 `/openapi.json`), new-deps note, risks (httpOnly-cookie vs Swagger, spec drift), and the DoD.
+
+> here onwards dont commit anything, and keep updating prompts.md
+> lets implement backend plan phase 2
+
+Implemented **Phase 2 — the 10,000-employee seed** of
+[docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md), test-first.
+Installed `@faker-js/faker` (already recorded in tech-stack.md). Put the pure, deterministic
+generation logic in [apps/api/src/utils/seed-data.ts](apps/api/src/utils/seed-data.ts) (so Vitest's
+`src/**` glob picks up its unit tests) and kept the DB orchestration in
+[apps/api/prisma/seed.ts](apps/api/prisma/seed.ts). The generator: a fixed Faker seed for
+reproducibility; 12 countries each mapped to its ISO 4217 local currency and a mid-level salary
+baseline (¥7M / ₹1.8M / $120k magnitudes on purpose, since FX is out of scope); 10 departments with
+constrained job titles; 8 weighted seniority levels (pyramid-shaped headcount); and a **log-normal
+salary per (country × level)** with a ~4% wider-spread tail for realistic outliers. Emails carry a
+row-index suffix to guarantee uniqueness against the `email @unique` constraint. The seed is
+**idempotent** (wipe-and-reseed) and batches `createMany` (1,000/batch) — it inserts 10,000 rows in
+~2.5s. Wrote 8 unit tests (count, determinism, unique emails, positive/finite salary,
+currency-matches-country, known enums, multi-country/level spread, senior>junior pay); re-ran the
+seed to confirm it stays at exactly 10k, and spot-checked the DB (salary rises monotonically by
+level, 10 departments / 37 titles, correct per-currency amounts). Added a seed note to the README.
+`pnpm --filter api` typecheck / lint / test all green (9 tests). Not committed, per instruction.
