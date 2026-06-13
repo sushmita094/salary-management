@@ -1,11 +1,12 @@
 import type { CreateEmployee } from "@acme/shared";
-import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { prisma } from "../src/db/client.js";
+import { authedRequest } from "./helpers/auth.js";
 import { migrateTestDb } from "./helpers/db.js";
 
 const app = createApp();
+const api = authedRequest(app);
 
 /** A valid-format uuid that is never seeded, for the "missing record" paths. */
 const MISSING_ID = "11111111-1111-4111-8111-111111111111";
@@ -52,21 +53,21 @@ afterAll(async () => {
 
 describe("GET /employees/:id", () => {
   it("returns the employee when it exists", async () => {
-    const res = await request(app).get(`/employees/${adaId}`);
+    const res = await api.get(`/employees/${adaId}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: adaId, name: "Ada Lovelace", email: "ada@acme.example" });
   });
 
   it("returns 404 for a well-formed but unknown id", async () => {
-    const res = await request(app).get(`/employees/${MISSING_ID}`);
+    const res = await api.get(`/employees/${MISSING_ID}`);
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");
   });
 
   it("returns 400 for a malformed id", async () => {
-    const res = await request(app).get("/employees/not-a-uuid");
+    const res = await api.get("/employees/not-a-uuid");
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
@@ -86,7 +87,7 @@ describe("POST /employees", () => {
   };
 
   it("creates the employee and returns 201 with the server-assigned fields", async () => {
-    const res = await request(app).post("/employees").send(NEW_EMPLOYEE);
+    const res = await api.post("/employees").send(NEW_EMPLOYEE);
 
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject(NEW_EMPLOYEE);
@@ -96,14 +97,14 @@ describe("POST /employees", () => {
   });
 
   it("returns 409 on a duplicate email", async () => {
-    const res = await request(app).post("/employees").send({ ...NEW_EMPLOYEE, email: "ada@acme.example" });
+    const res = await api.post("/employees").send({ ...NEW_EMPLOYEE, email: "ada@acme.example" });
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("CONFLICT");
   });
 
   it("returns 400 with field details for an invalid body", async () => {
-    const res = await request(app).post("/employees").send({ ...NEW_EMPLOYEE, salaryCurrency: "Dollars", salaryAmount: -1 });
+    const res = await api.post("/employees").send({ ...NEW_EMPLOYEE, salaryCurrency: "Dollars", salaryAmount: -1 });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
@@ -113,28 +114,28 @@ describe("POST /employees", () => {
 
 describe("PUT /employees/:id", () => {
   it("applies a partial update and returns 200 with the new values", async () => {
-    const res = await request(app).put(`/employees/${adaId}`).send({ salaryAmount: 130_000 });
+    const res = await api.put(`/employees/${adaId}`).send({ salaryAmount: 130_000 });
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: adaId, salaryAmount: 130_000, name: "Ada Lovelace" });
   });
 
   it("returns 404 when the id is unknown", async () => {
-    const res = await request(app).put(`/employees/${MISSING_ID}`).send({ salaryAmount: 1 });
+    const res = await api.put(`/employees/${MISSING_ID}`).send({ salaryAmount: 1 });
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");
   });
 
   it("returns 409 when changing the email to one already taken", async () => {
-    const res = await request(app).put(`/employees/${adaId}`).send({ email: "grace@acme.example" });
+    const res = await api.put(`/employees/${adaId}`).send({ email: "grace@acme.example" });
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("CONFLICT");
   });
 
   it("returns 400 for an invalid field", async () => {
-    const res = await request(app).put(`/employees/${adaId}`).send({ salaryCurrency: "Euro" });
+    const res = await api.put(`/employees/${adaId}`).send({ salaryCurrency: "Euro" });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
@@ -143,7 +144,7 @@ describe("PUT /employees/:id", () => {
 
 describe("DELETE /employees/:id", () => {
   it("removes the employee and returns 204", async () => {
-    const res = await request(app).delete(`/employees/${adaId}`);
+    const res = await api.delete(`/employees/${adaId}`);
 
     expect(res.status).toBe(204);
     expect(res.body).toEqual({});
@@ -151,7 +152,7 @@ describe("DELETE /employees/:id", () => {
   });
 
   it("returns 404 when the id is unknown", async () => {
-    const res = await request(app).delete(`/employees/${MISSING_ID}`);
+    const res = await api.delete(`/employees/${MISSING_ID}`);
 
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");

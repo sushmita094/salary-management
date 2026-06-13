@@ -1,11 +1,12 @@
 import type { CreateEmployee, CurrencyRollup, SegmentStat } from "@acme/shared";
-import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { prisma } from "../src/db/client.js";
+import { authedRequest } from "./helpers/auth.js";
 import { migrateTestDb } from "./helpers/db.js";
 
 const app = createApp();
+const api = authedRequest(app);
 
 /**
  * Hand-computable fixture: two currencies so per-currency separation is provable.
@@ -56,7 +57,7 @@ afterAll(async () => {
 
 describe("GET /analytics/summary", () => {
   it("reports headcount overall and money per currency (avg + median)", async () => {
-    const res = await request(app).get("/analytics/summary");
+    const res = await api.get("/analytics/summary");
 
     expect(res.status).toBe(200);
     expect(res.body.headcount).toBe(7);
@@ -71,7 +72,7 @@ describe("GET /analytics/summary", () => {
 
 describe("GET /analytics/by/:dimension", () => {
   it("computes per-(department × currency) avg/median/min/max", async () => {
-    const res = await request(app).get("/analytics/by/department");
+    const res = await api.get("/analytics/by/department");
 
     expect(res.status).toBe(200);
     expect(res.body.dimension).toBe("department");
@@ -88,7 +89,7 @@ describe("GET /analytics/by/:dimension", () => {
   });
 
   it("slices by country as a single currency per country", async () => {
-    const res = await request(app).get("/analytics/by/country");
+    const res = await api.get("/analytics/by/country");
 
     expect(segment(res.body.groups, "United States", "USD")).toMatchObject({
       headcount: 4, average: 250_000, median: 250_000,
@@ -99,7 +100,7 @@ describe("GET /analytics/by/:dimension", () => {
   });
 
   it("rejects an unknown dimension with a 400 error envelope", async () => {
-    const res = await request(app).get("/analytics/by/salary");
+    const res = await api.get("/analytics/by/salary");
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
@@ -108,7 +109,7 @@ describe("GET /analytics/by/:dimension", () => {
 
 describe("GET /analytics/distribution", () => {
   it("returns equal-width pay bands per currency", async () => {
-    const res = await request(app).get("/analytics/distribution").query({ bucketCount: 4 });
+    const res = await api.get("/analytics/distribution").query({ bucketCount: 4 });
 
     expect(res.status).toBe(200);
     expect(res.body.bucketCount).toBe(4);
@@ -124,7 +125,7 @@ describe("GET /analytics/distribution", () => {
   });
 
   it("scopes the histogram to a single currency when filtered", async () => {
-    const res = await request(app).get("/analytics/distribution").query({ currency: "USD", bucketCount: 4 });
+    const res = await api.get("/analytics/distribution").query({ currency: "USD", bucketCount: 4 });
 
     expect(res.body.currencies).toHaveLength(1);
     expect(res.body.currencies[0].currency).toBe("USD");

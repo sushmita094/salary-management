@@ -35,6 +35,7 @@ export {
   importResultSchema,
   exportQuerySchema,
 } from "./schemas/import.js";
+export { loginSchema, authUserSchema, loginResponseSchema } from "./schemas/auth.js";
 
 export type {
   Employee,
@@ -63,3 +64,4 @@ export type {
   ImportResult,
   ExportQuery,
 } from "./types/import.js";
+export type { LoginInput, AuthUser, LoginResponse } from "./types/auth.js";

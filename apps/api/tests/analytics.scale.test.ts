@@ -1,12 +1,13 @@
 import type { CurrencyRollup, SegmentStat } from "@acme/shared";
-import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { prisma } from "../src/db/client.js";
 import { generateEmployees } from "../src/utils/seed-data.js";
+import { authedRequest } from "./helpers/auth.js";
 import { migrateTestDb } from "./helpers/db.js";
 
 const app = createApp();
+const api = authedRequest(app);
 const SIZE = 3_000;
 
 /**
@@ -30,7 +31,7 @@ afterAll(async () => {
 
 describe("analytics at scale", () => {
   it("summary headcounts reconcile to the full population", async () => {
-    const res = await request(app).get("/analytics/summary");
+    const res = await api.get("/analytics/summary");
 
     expect(res.body.headcount).toBe(SIZE);
     const summed = res.body.byCurrency.reduce((n: number, c: CurrencyRollup) => n + c.headcount, 0);
@@ -43,7 +44,7 @@ describe("analytics at scale", () => {
   });
 
   it("every segment's median and average sit within [min, max]", async () => {
-    const res = await request(app).get("/analytics/by/level");
+    const res = await api.get("/analytics/by/level");
 
     expect(res.body.groups.length).toBeGreaterThan(0);
     for (const g of res.body.groups as SegmentStat[]) {
@@ -55,8 +56,8 @@ describe("analytics at scale", () => {
   });
 
   it("distribution band counts account for every employee in each currency", async () => {
-    const summary = await request(app).get("/analytics/summary");
-    const dist = await request(app).get("/analytics/distribution").query({ bucketCount: 12 });
+    const summary = await api.get("/analytics/summary");
+    const dist = await api.get("/analytics/distribution").query({ bucketCount: 12 });
 
     const headcountOf = new Map<string, number>(
       (summary.body.byCurrency as CurrencyRollup[]).map((c) => [c.currency, c.headcount]),

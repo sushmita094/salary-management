@@ -11,6 +11,16 @@ datasource db {
   provider = "sqlite"
 }
 
+// The single trusted HR-Manager account (requirements §5.5) — no roles, no
+// self-registration. Seeded from env; the password is only ever stored hashed.
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model Employee {
   id             String   @id @default(uuid())
   name           String

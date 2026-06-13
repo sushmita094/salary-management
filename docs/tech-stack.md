@@ -163,6 +163,14 @@ frontend — one definition of an "Employee" across the wire.
 A single trusted HR-Manager user class behind a simple session/token gate (requirements §5.5). No
 roles or permissions — auth is only a lock on sensitive data, deliberately kept minimal.
 
+Implementation: the password is hashed with **bcryptjs** (pure-JS, so no extra native build on top
+of better-sqlite3) and never stored in plaintext. Login issues a **stateless signed JWT**
+(`jsonwebtoken`) carried in an **httpOnly, sameSite cookie** (`cookie-parser` reads it back) — no
+session store, which fits the single-service deploy. The token is *also* accepted as a `Bearer`
+Authorization header so the hosted Swagger UI's **Authorize** button can exercise protected routes
+(the httpOnly cookie is unreadable from JS). `requireAuth` verifies the token statelessly (no DB
+round-trip) and gates every data route; the secret comes from config/env.
+
 ### Monorepo & tooling
 
 The project is a single **pnpm-workspaces** monorepo. Runnable apps live in `apps/` (`api`, `web`);
@@ -255,6 +263,12 @@ follow these, not memory or blog posts.**
 - **SheetJS** (Excel/CSV parse + write) — https://docs.sheetjs.com/
 - **multer** (multipart upload) — https://github.com/expressjs/multer
 - **csv-parse** (noted streaming fast-follow) — https://csv.js.org/parse/
+
+### Authentication
+
+- **bcryptjs** (password hashing) — https://github.com/dcodeIO/bcrypt.js
+- **jsonwebtoken** (JWT) — https://github.com/auth0/node-jsonwebtoken
+- **cookie-parser** — https://github.com/expressjs/cookie-parser
 
 ### Testing
 

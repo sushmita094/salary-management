@@ -38,7 +38,15 @@ pnpm --filter api seed             # populates ~10,000 realistic employees (dete
 The seed is **idempotent and deterministic** — it wipes and re-inserts the same ~10,000 employees
 (fixed Faker seed) spread across 12 countries with their local currencies, 10 departments, and 8
 seniority levels, with a log-normal salary distribution per country/level. Re-running it always
-leaves exactly 10,000 rows.
+leaves exactly 10,000 rows. It also creates the single **HR-Manager** login from
+`AUTH_EMAIL`/`AUTH_PASSWORD` (defaults `hr@acme.example` / `change-me-please`).
+
+## Authentication
+
+All data routes (`/employees`, `/analytics`, `/import`, `/export`) require a session; `/health` and
+`/auth/login` are public. `POST /auth/login` returns a JWT and sets it as an httpOnly cookie; the
+same token is also accepted as an `Authorization: Bearer <token>` header (so the Swagger UI can call
+protected endpoints). Set a strong `JWT_SECRET` for any real deployment.
 
 ## Running
 

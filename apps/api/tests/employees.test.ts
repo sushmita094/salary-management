@@ -1,11 +1,12 @@
 import type { CreateEmployee } from "@acme/shared";
-import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { prisma } from "../src/db/client.js";
+import { authedRequest } from "./helpers/auth.js";
 import { migrateTestDb } from "./helpers/db.js";
 
 const app = createApp();
+const api = authedRequest(app);
 
 /** A small, hand-picked fixture with enough variety to exercise every list feature. */
 const FIXTURE: CreateEmployee[] = [
@@ -30,7 +31,7 @@ afterAll(async () => {
 
 describe("GET /employees", () => {
   it("returns the standard envelope, default-sorted by name asc", async () => {
-    const res = await request(app).get("/employees");
+    const res = await api.get("/employees");
 
     expect(res.status).toBe(200);
     expect(res.body.pagination).toEqual({ page: 1, pageSize: 20, total: 7, totalPages: 1 });
@@ -42,7 +43,7 @@ describe("GET /employees", () => {
   });
 
   it("searches name/email case-insensitively (hit)", async () => {
-    const res = await request(app).get("/employees").query({ search: "ADA" });
+    const res = await api.get("/employees").query({ search: "ADA" });
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
@@ -50,27 +51,27 @@ describe("GET /employees", () => {
   });
 
   it("returns an empty page for a search miss", async () => {
-    const res = await request(app).get("/employees").query({ search: "zzzzz" });
+    const res = await api.get("/employees").query({ search: "zzzzz" });
 
     expect(res.body.data).toEqual([]);
     expect(res.body.pagination).toEqual({ page: 1, pageSize: 20, total: 0, totalPages: 0 });
   });
 
   it("filters by country", async () => {
-    const res = await request(app).get("/employees").query({ country: "United States" });
+    const res = await api.get("/employees").query({ country: "United States" });
 
     expect(res.body.pagination.total).toBe(3);
     expect(res.body.data.every((e: { country: string }) => e.country === "United States")).toBe(true);
   });
 
   it("filters by department", async () => {
-    const res = await request(app).get("/employees").query({ department: "Data & Analytics" });
+    const res = await api.get("/employees").query({ department: "Data & Analytics" });
 
     expect(res.body.data.map((e: { name: string }) => e.name)).toEqual(["Katherine Johnson"]);
   });
 
   it("filters by level", async () => {
-    const res = await request(app).get("/employees").query({ level: "Senior" });
+    const res = await api.get("/employees").query({ level: "Senior" });
 
     expect(res.body.pagination.total).toBe(2);
     expect(res.body.data.map((e: { name: string }) => e.name).sort()).toEqual([
@@ -80,25 +81,25 @@ describe("GET /employees", () => {
   });
 
   it("sorts by salary ascending and descending", async () => {
-    const asc = await request(app).get("/employees").query({ sort: "salaryAmount", order: "asc" });
-    const desc = await request(app).get("/employees").query({ sort: "salaryAmount", order: "desc" });
+    const asc = await api.get("/employees").query({ sort: "salaryAmount", order: "asc" });
+    const desc = await api.get("/employees").query({ sort: "salaryAmount", order: "desc" });
 
     expect(asc.body.data[0].name).toBe("Linus Torvalds"); // 70,000
     expect(desc.body.data[0].name).toBe("Margaret Hamilton"); // 200,000
   });
 
   it("paginates and clamps a page past the end to the last page", async () => {
-    const first = await request(app).get("/employees").query({ pageSize: 2, page: 1 });
+    const first = await api.get("/employees").query({ pageSize: 2, page: 1 });
     expect(first.body.data).toHaveLength(2);
     expect(first.body.pagination).toEqual({ page: 1, pageSize: 2, total: 7, totalPages: 4 });
 
-    const beyond = await request(app).get("/employees").query({ pageSize: 2, page: 99 });
+    const beyond = await api.get("/employees").query({ pageSize: 2, page: 99 });
     expect(beyond.body.pagination.page).toBe(4);
     expect(beyond.body.data).toHaveLength(1); // 7 rows → last page holds the remainder
   });
 
   it("rejects a non-whitelisted sort column with a 400 error envelope", async () => {
-    const res = await request(app).get("/employees").query({ sort: "id" });
+    const res = await api.get("/employees").query({ sort: "id" });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
@@ -106,7 +107,7 @@ describe("GET /employees", () => {
   });
 
   it("rejects a page below 1", async () => {
-    const res = await request(app).get("/employees").query({ page: 0 });
+    const res = await api.get("/employees").query({ page: 0 });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");

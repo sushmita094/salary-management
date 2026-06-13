@@ -260,3 +260,30 @@ valid/invalid (partial success + no corruption), email upsert, header mismatch (
 Smoke-tested over real HTTP (1 inserted / 1 failed with per-row messages; CSV + 16KB xlsx with
 correct headers). Documented the format in the README. `pnpm --filter api` typecheck / lint / test
 (now **73**) and shared tests (**26**) all green. Not committed, per instruction.
+
+> lets implement phase 7 of backend plan
+
+Implemented **Phase 7 — Authentication gate** of
+[docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md), test-first.
+Updated [docs/tech-stack.md](docs/tech-stack.md) first with the chosen libs and reasoning:
+**bcryptjs** (pure-JS hashing, no extra native build), **jsonwebtoken** (stateless signed JWT), and
+**cookie-parser**. Added a single `User` model (email + `passwordHash`) and a migration; the seed now
+upserts one HR-Manager account from env (`AUTH_EMAIL`/`AUTH_PASSWORD`), password only ever stored
+hashed. Shared auth contracts in
+[packages/shared/src/schemas/auth.ts](packages/shared/src/schemas/auth.ts) (`loginSchema`,
+`authUserSchema`, `loginResponseSchema`). The auth service
+([apps/api/src/services/auth.service.ts](apps/api/src/services/auth.service.ts)) exposes testable
+`hashPassword`/`verifyPassword`/`issueToken`/`verifyToken` plus `login` (same 401 for bad email *or*
+password — no user enumeration). `POST /auth/login` sets the JWT in an **httpOnly, sameSite cookie**
+*and* echoes it; `POST /auth/logout` clears it; `GET /auth/me` rehydrates. A `requireAuth` middleware
+([middleware/require-auth.ts]) verifies the token **statelessly** from the cookie *or* a `Bearer`
+header (so Swagger's Authorize works against the httpOnly cookie) and gates `/employees`,
+`/analytics`, `/import`, `/export`; `/health` and `/auth/login` stay public. Config gained
+`jwtSecret`/`jwtTtlSeconds`/admin creds (dev defaults; Phase 8 will fail-fast in prod). Tests: unit
+for hashing + token round-trip/tamper; integration for login happy/sad/validation, the gate
+returning 401 without/with a bad token and 200 via **both** cookie and Bearer, plus `/me` and
+`/logout`. All prior protected-route suites were updated to authenticate via a new `authedRequest`
+test helper. Verified over real HTTP (401 unauthenticated, 401 wrong password, login → 223-char JWT +
+cookie, 200 via Bearer and cookie). Documented env vars + login in `.env.example` and the README.
+`pnpm --filter api` typecheck / lint / test (now **87**) and shared tests (**26**) all green. Not
+committed, per instruction.

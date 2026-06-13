@@ -4,9 +4,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { prisma } from "../src/db/client.js";
 import { generateEmployees } from "../src/utils/seed-data.js";
+import { authedRequest } from "./helpers/auth.js";
 import { migrateTestDb } from "./helpers/db.js";
 
 const app = createApp();
+const api = authedRequest(app);
 
 const HEADER = "name,email,country,department,jobTitle,level,salaryAmount,salaryCurrency";
 const csv = (...lines: string[]): Buffer => Buffer.from([HEADER, ...lines].join("\n"));
@@ -28,7 +30,7 @@ afterAll(async () => {
 describe("POST /import", () => {
   it("imports a valid file and reports inserted counts", async () => {
     const res = await attach(
-      request(app).post("/import"),
+      api.post("/import"),
       csv(
         "Ada Lovelace,ada@acme.example,United Kingdom,Engineering,Software Engineer,Principal,120000,GBP",
         "Grace Hopper,grace@acme.example,United States,Engineering,Software Engineer,Staff,180000,USD",
@@ -42,7 +44,7 @@ describe("POST /import", () => {
 
   it("reports bad rows without aborting the good ones (no silent corruption)", async () => {
     const res = await attach(
-      request(app).post("/import"),
+      api.post("/import"),
       csv(
         "Ada Lovelace,ada@acme.example,United Kingdom,Engineering,Software Engineer,Principal,120000,GBP",
         "Bad Row,not-an-email,United States,Engineering,Software Engineer,Staff,-5,Dollars",
@@ -74,7 +76,7 @@ describe("POST /import", () => {
     });
 
     const res = await attach(
-      request(app).post("/import"),
+      api.post("/import"),
       csv("Ada Lovelace,ada@acme.example,United Kingdom,Engineering,Software Engineer,Principal,150000,GBP"),
     );
 
@@ -88,7 +90,7 @@ describe("POST /import", () => {
     const wrongHeader = "fullName,email,country,department,jobTitle,level,salaryAmount,salaryCurrency";
     const body = Buffer.from(`${wrongHeader}\nAda,ada@acme.example,UK,Eng,SWE,Principal,120000,GBP`);
 
-    const res = await attach(request(app).post("/import"), body);
+    const res = await attach(api.post("/import"), body);
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
@@ -96,7 +98,7 @@ describe("POST /import", () => {
   });
 
   it("returns 400 when no file is attached", async () => {
-    const res = await request(app).post("/import");
+    const res = await api.post("/import");
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
@@ -108,7 +110,7 @@ describe("POST /import", () => {
         `${e.name},${e.email},${e.country},${e.department},${e.jobTitle},${e.level},${e.salaryAmount},${e.salaryCurrency}`,
     );
 
-    const res = await attach(request(app).post("/import"), csv(...rows));
+    const res = await attach(api.post("/import"), csv(...rows));
 
     expect(res.body).toMatchObject({ inserted: 1_000, updated: 0, failed: 0 });
     expect(await prisma.employee.count()).toBe(1_000);
@@ -127,7 +129,7 @@ describe("GET /export", () => {
   });
 
   it("exports the filtered view as CSV with a download filename", async () => {
-    const res = await request(app).get("/export").query({ country: "United States" });
+    const res = await api.get("/export").query({ country: "United States" });
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("text/csv");
@@ -140,10 +142,10 @@ describe("GET /export", () => {
   });
 
   it("round-trips: export → re-import reproduces the same employees", async () => {
-    const exported = await request(app).get("/export"); // all three
+    const exported = await api.get("/export"); // all three
     await prisma.employee.deleteMany();
 
-    const reimport = await attach(request(app).post("/import"), Buffer.from(exported.text));
+    const reimport = await attach(api.post("/import"), Buffer.from(exported.text));
 
     expect(reimport.body).toMatchObject({ inserted: 3, updated: 0, failed: 0 });
     const ada = await prisma.employee.findUnique({ where: { email: "ada@acme.example" } });
@@ -151,7 +153,7 @@ describe("GET /export", () => {
   });
 
   it("can emit an xlsx workbook", async () => {
-    const res = await request(app).get("/export").query({ format: "xlsx" }).buffer();
+    const res = await api.get("/export").query({ format: "xlsx" }).buffer();
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("spreadsheetml");

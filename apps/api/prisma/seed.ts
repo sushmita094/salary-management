@@ -1,4 +1,7 @@
 import { prisma } from "../src/db/client.js";
+import { config } from "../src/config/env.js";
+import { upsertUser } from "../src/repositories/user.repository.js";
+import { hashPassword } from "../src/services/auth.service.js";
 import { generateEmployees } from "../src/utils/seed-data.js";
 
 /**
@@ -22,6 +25,10 @@ async function main(): Promise<void> {
 
   const count = await prisma.employee.count();
   console.log(`Seeded ${count} employees across ${TOTAL === count ? "all" : "some"} batches.`);
+
+  // The single HR-Manager account (idempotent upsert by email).
+  await upsertUser(config.adminEmail, await hashPassword(config.adminPassword));
+  console.log(`Seeded HR-Manager account: ${config.adminEmail}`);
 }
 
 main()
