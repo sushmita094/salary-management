@@ -15,8 +15,11 @@
   "dependencies": {
     "@acme/shared": "workspace:*",
     "@tanstack/react-query": "^5.101.0",
+    "clsx": "^2.1.1",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.17.0",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@acme/eslint-config": "workspace:*",

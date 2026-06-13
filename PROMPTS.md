@@ -335,3 +335,33 @@ both security schemes, `/import` as `multipart/form-data`, `/employees` query pa
 and the Swagger UI page + assets loading. Updated the README (docs link + Authorize flow) and marked
 [CLAUDE.md](CLAUDE.md) **backend feature-complete**. `pnpm --filter api` typecheck / lint / test (now
 **99**) and shared tests (**26**) all green. Not committed, per instruction.
+
+> lets implement frontend plan phase 1
+
+Implemented **Phase 1 — Foundation: app shell, routing & the data layer** of
+[docs/plans/03-frontend-implementation.md](docs/plans/03-frontend-implementation.md), test-first.
+Updated [docs/tech-stack.md](docs/tech-stack.md) first with the new frontend deps + reasoning
+(**react-router-dom** for SPA routing; **clsx** + **tailwind-merge** for a `cn()` class helper) —
+`react-hook-form`/`msw` deferred to the phases that first need them. Built the pieces every feature
+reuses: a hardened, envelope-aware **API client**
+([apps/web/src/api/client.ts](apps/web/src/api/client.ts)) with GET/POST/PUT/DELETE + multipart
+upload + blob download, `credentials: "include"` (httpOnly-cookie session), parsing of the shared
+`{ error }` envelope into a typed `ApiRequestError`, and a registerable **401 handler** (auth probes
+opt out); a configured **QueryClient** + **query-key factory**
+([lib/queryClient.ts](apps/web/src/lib/queryClient.ts),
+[lib/queryKeys.ts](apps/web/src/lib/queryKeys.ts)); a **React Router** tree with a persistent **app
+shell** (brand + primary nav + `<Outlet/>`), `/login` outside the shell, index→`/employees` redirect,
+and a 404 page ([app/router.tsx](apps/web/src/app/router.tsx),
+[components/layout/AppShell.tsx](apps/web/src/components/layout/AppShell.tsx)); and the **design-system
+primitives** on a small Tailwind v4 `@theme` token set — `Button`, `Input`, `Select`, `Card`,
+`Spinner`, `Skeleton`, `EmptyState`, and a `Toast` provider/region (hook split into its own module for
+fast-refresh hygiene). Placeholder pages stand in for Directory/Analytics/Import-Export/Login until
+their feature phases. Replaced the scaffold's health-badge `App.tsx` and removed the obsolete
+`api/health`, `useHealth`, and `StatusBadge` files. Tests (Vitest + RTL): the client unwraps
+success/error envelopes, throws typed errors, fires (and skips) the 401 handler, and handles 204; the
+router renders the shell + nav + routed page, redirects the index, shows the 404 inside the shell, and
+keeps `/login` outside it; primitives (Button/EmptyState/Toast) render and behave. Wired RTL
+`cleanup()` into the test setup (Vitest globals are off) and updated the Playwright smoke to the new
+shell. **Deviations (noted):** the `Dialog` primitive is deferred to Phase 4 (its first real use —
+delete confirm) to avoid pulling a headless lib early. `pnpm --filter web` typecheck / lint / test
+(**14**) and `build` all green, plus repo-wide typecheck/lint. Not committed, per instruction.

@@ -130,6 +130,14 @@ Pagination, caching, request de-duplication, and clean loading/error/empty state
 the requirements ask for (§5.6). TanStack Query provides them declaratively so the UI components
 stay focused on rendering, not fetch plumbing.
 
+### Client routing & utilities
+
+**react-router-dom** drives the SPA's pages and route guards (a single-user dashboard needs client
+routing, not SSR). **clsx** + **tailwind-merge** compose conditional Tailwind classes without
+specificity clashes (a tiny `cn()` helper) — the ergonomic glue for the in-house design system. Forms
+(`react-hook-form` + `@hookform/resolvers`) and test mocking (`msw`) are added in the phases that
+first need them.
+
 ---
 
 ## 5. Cross-Cutting
@@ -278,6 +286,8 @@ follow these, not memory or blog posts.**
 - **Headless UI** (alternative primitives) — https://headlessui.com/
 - **Recharts** (charts) — https://recharts.org/en-US/
 - **TanStack Query** — https://tanstack.com/query/latest/docs/framework/react/overview
+- **React Router** — https://reactrouter.com/
+- **clsx** / **tailwind-merge** — https://github.com/lukeed/clsx · https://github.com/dcastil/tailwind-merge
 
 ### Validation & data movement
 

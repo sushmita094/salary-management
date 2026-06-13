@@ -11,8 +11,8 @@ top of the existing `apps/web` scaffold. It implements the user-facing scope in
 [02-backend-implementation.md](02-backend-implementation.md) (§5), and follows the frontend
 architecture in [../tech-stack.md](../tech-stack.md) (§4).
 
-The single persona is the **HR Manager** (requirements §3): one trusted user who must *find* any
-employee in seconds, *maintain* records confidently, and *answer* compensation questions without
+The single persona is the **HR Manager** (requirements §3): one trusted user who must _find_ any
+employee in seconds, _maintain_ records confidently, and _answer_ compensation questions without
 spreadsheets. The UI is a single-user authenticated **dashboard/SPA** — no SEO, SSR, or
 multi-role surfaces (tech-stack §4).
 
@@ -31,7 +31,7 @@ Already in place from [01-project-setup.md](01-project-setup.md) (web phase) and
 - A minimal **typed fetch helper** ([api/client.ts](../../apps/web/src/api/client.ts), `apiGet<T>`) and a
   **feature pattern** (`features/health/useHealth` → a `useQuery` hook) proving the api↔web path.
 - **Shared wire types** from `@acme/shared` consumed in the client (e.g. [lib/format.ts](../../apps/web/src/lib/format.ts)
-  `formatSalary` uses the shared `Employee` type) — *one definition across the wire*.
+  `formatSalary` uses the shared `Employee` type) — _one definition across the wire_.
 - **Dev proxy**: Vite forwards `/api/*` to the Express server ([vite.config.ts](../../apps/web/vite.config.ts)).
 - **Feature-first `src/`**: `components`, `features`, `pages`, `hooks`, `api`, `lib`, `types`, `styles`.
 - **RTL + Vitest** (component/unit) and **Playwright** (E2E) configured with one green test each.
@@ -48,12 +48,14 @@ commits) and is built **test-first** (TDD per the JD): write the failing test, m
 These hold across all phases so individual phases don't re-litigate them.
 
 ### 2.1 Routing & app shell
+
 - A client router (**React Router**) drives the SPA: a persistent **app shell** (header with app name
-  + current user + sign-out; primary nav: Directory / Analytics / Import-Export) wraps the routed
-  pages. The login route renders outside the shell.
+  - current user + sign-out; primary nav: Directory / Analytics / Import-Export) wraps the routed
+    pages. The login route renders outside the shell.
 - Routes are lazy-loaded per feature where it keeps the initial bundle lean; the shell stays eager.
 
 ### 2.2 Typed API client (one place, envelope-aware)
+
 - Extend [api/client.ts](../../apps/web/src/api/client.ts) into a small typed client covering `GET/POST/PUT/DELETE`,
   JSON bodies, **`credentials: "include"`** (the session is an httpOnly cookie — backend §Phase 7),
   multipart upload (for import), and **blob** download (for export).
@@ -66,6 +68,7 @@ These hold across all phases so individual phases don't re-litigate them.
   isn't hard-coded to localhost. CORS-with-credentials is already aligned on the backend (§Phase 8).
 
 ### 2.3 Server state — TanStack Query conventions
+
 - All server data flows through TanStack Query; **no server state in React state/Context** except the
   auth session snapshot.
 - A **query-key factory** (`keys.employees.list(query)`, `keys.employees.detail(id)`,
@@ -75,18 +78,21 @@ These hold across all phases so individual phases don't re-litigate them.
   success; optimistic updates only where they clearly help (e.g. delete), otherwise invalidate-and-refetch.
 
 ### 2.4 URL is the source of truth for directory state
+
 - Directory `page`, `pageSize`, `search`, filters, `sort`, `order` live in the **URL query string**
   (mirroring `employeeQuerySchema`), so views are shareable/bookmarkable, back/forward works, and a
   refresh preserves state. The query hook derives its key from the URL.
 
 ### 2.5 Forms & validation (reuse the shared schemas)
+
 - Forms use **React Hook Form** with a **Zod resolver** bound to the **shared** `createEmployeeSchema`
-  / `updateEmployeeSchema` / `loginSchema` — *the same schemas the server validates with*, so client
+  / `updateEmployeeSchema` / `loginSchema` — _the same schemas the server validates with_, so client
   and server can't disagree on what's valid.
 - Server-side failures still surface: a **400** maps its `details` onto the offending fields, and a
   **409** (duplicate email) maps to the email field — the client never assumes it caught everything.
 
 ### 2.6 Design system on Tailwind + headless primitives
+
 - Reusable, in-house **Tailwind** components (`Button`, `Input`, `Select`, `Table`, `Card`, `Badge`,
   `Dialog`, `Toast`, `Pagination`, `Spinner/Skeleton`, `EmptyState`) live in `components/` with a
   small design-token set (spacing/colour/typography) for a consistent, data-dense HR UI (tech-stack §4).
@@ -95,18 +101,21 @@ These hold across all phases so individual phases don't re-litigate them.
   presentation. We don't adopt a heavyweight component library.
 
 ### 2.7 Money & currency presentation (no false cross-currency totals)
+
 - All money is formatted in its **local currency** via the shared `formatSalary` helper (Intl).
 - Because the backend reports analytics **per currency** (FX out of scope, requirements §6), the UI
   **never sums across currencies**: summary and breakdowns are grouped/selectable by currency, and any
   monetary figure always shows its currency. This is a hard rule, surfaced in the components.
 
 ### 2.8 Loading / empty / error conventions (requirements §5.6)
+
 - Every async surface has three first-class states: **loading** (skeletons for tables/cards, not
   spinners-only), **empty** (a helpful `EmptyState` with the next action, e.g. "No employees match —
   clear filters" / "Import a spreadsheet to get started"), and **error** (inline, retryable; the
   envelope `message` shown, never a raw stack). The user always trusts what they see.
 
 ### 2.9 Testing strategy
+
 - **Component/feature (Vitest + RTL + MSW)**: render features against **Mock Service Worker** handlers
   that return the real response envelopes/fixtures, asserting rendered states, interactions, and that
   the right requests fire. Covers loading/empty/error, pagination, filter→URL, form validation
@@ -117,7 +126,8 @@ These hold across all phases so individual phases don't re-litigate them.
 - Accessibility assertions (roles, labels, focus) ride along in RTL; a smoke a11y pass in Playwright.
 
 ### 2.10 New dependencies (update tech-stack.md first)
-Per the working agreement, [../tech-stack.md](../tech-stack.md) is updated *first* (with a one-line
+
+Per the working agreement, [../tech-stack.md](../tech-stack.md) is updated _first_ (with a one-line
 "why") before any of these is added. Already named there: **TanStack Query**, **Tailwind**,
 **Radix/Headless UI**, **Recharts**, **RTL**, **Playwright**. **New to record:** the **router**
 (`react-router-dom`), **forms** (`react-hook-form` + `@hookform/resolvers`), **API mocking for tests**
@@ -129,12 +139,13 @@ None pulls in excluded scope (payroll/FX/roles).
 ## 3. Phases
 
 ### Phase 1 — Foundation: app shell, routing & the data layer
+
 **Goal:** a navigable, themed shell with the plumbing every feature reuses — before any feature exists.
 
 - Replace the placeholder `App.tsx` with the **router** and an **app shell** layout (header, primary
   nav, content outlet, a global toast region). Add a **404 / not-found** route.
 - Harden the **API client** (§2.2): verbs, credentials, error-envelope parsing → `ApiError`, multipart
-  + blob support, the 401→login interceptor, env-driven base URL.
+  - blob support, the 401→login interceptor, env-driven base URL.
 - Configure the **QueryClient** (sane defaults: retry/stale times, `keepPreviousData` default for
   lists) and the **query-key factory** (§2.3).
 - Stand up the **design-system primitives** (§2.6) needed early (`Button`, `Input`, `Select`, `Card`,
@@ -145,6 +156,7 @@ None pulls in excluded scope (payroll/FX/roles).
   are in place and tested (no feature data yet).
 
 ### Phase 2 — Authentication UI & route protection
+
 **Goal:** the HR Manager signs in before any data is reachable (requirements §5.5).
 
 - **Auth context/provider:** bootstraps session on load via `GET /auth/me` (cookie-based), exposes
@@ -161,6 +173,7 @@ None pulls in excluded scope (payroll/FX/roles).
 - **Done when:** no app route is reachable without a session; login/logout work; refresh rehydrates.
 
 ### Phase 3 — Employee directory (list, search, filter, sort, paginate)
+
 **Goal:** find any employee in seconds at 10k scale (requirements §5.1).
 
 - **Directory page** with a reusable **data table**: server-driven **pagination** (page/size controls
@@ -178,6 +191,7 @@ None pulls in excluded scope (payroll/FX/roles).
   URL, and it stays responsive on the seeded 10k dataset.
 
 ### Phase 4 — Employee detail & CRUD
+
 **Goal:** maintain the data confidently (requirements §5.2).
 
 - **Detail view** (`GET /employees/:id`): full compensation in local currency; **404 → not-found**
@@ -195,6 +209,7 @@ None pulls in excluded scope (payroll/FX/roles).
   cache invalidation.
 
 ### Phase 5 — Compensation analytics dashboard
+
 **Goal:** answer "how does the org pay people?" at a glance — **median emphasised** (requirements §5.3).
 
 - **Summary** (`GET /analytics/summary`): headcount cards + **per-currency** rollups (total spend,
@@ -213,6 +228,7 @@ None pulls in excluded scope (payroll/FX/roles).
   segment comparisons, and a distribution view — responsive on the full dataset.
 
 ### Phase 6 — Bulk import & export UI
+
 **Goal:** move spreadsheets in and out without editing records one by one (requirements §5.4).
 
 - **Export:** a control on the directory/import-export surface that calls `GET /export` with the
@@ -231,6 +247,7 @@ None pulls in excluded scope (payroll/FX/roles).
   per-row validation feedback, and the directory/analytics reflect imported changes.
 
 ### Phase 7 — UX polish, accessibility & responsiveness
+
 **Goal:** a clean, trustworthy, daily-use HR UI (requirements §5.6).
 
 - **Accessibility:** keyboard navigation throughout, focus management/trapping in dialogs, labelled
@@ -246,6 +263,7 @@ None pulls in excluded scope (payroll/FX/roles).
   states everywhere.
 
 ### Phase 8 — Test coverage & end-to-end journeys
+
 **Goal:** prove the whole thing works together, not just in mocks.
 
 - Fill out **RTL+MSW** coverage to the per-phase bars above (every feature's states + interactions).
@@ -262,30 +280,30 @@ None pulls in excluded scope (payroll/FX/roles).
 
 ## 4. Screen / route map (target)
 
-| Route                | Auth | Screen / purpose |
-| -------------------- | ---- | ---------------- |
-| `/login`             | no   | Sign-in form (outside the app shell). |
-| `/`                  | yes  | Redirect → `/employees` (Directory as home). |
-| `/employees`         | yes  | Directory: paginated table, search/filter/sort, export/import entry points. |
-| `/employees/new`     | yes  | Create employee form. |
-| `/employees/:id`     | yes  | Employee detail + Edit/Delete actions. |
-| `/employees/:id/edit`| yes  | Edit employee form. |
-| `/analytics`         | yes  | Compensation dashboard: summary, by-dimension comparison, distribution. |
-| `/import-export`     | yes  | Bulk import dialog/page + export controls (may also surface on `/employees`). |
-| `*`                  | —    | Not-found page. |
+| Route                 | Auth | Screen / purpose                                                              |
+| --------------------- | ---- | ----------------------------------------------------------------------------- |
+| `/login`              | no   | Sign-in form (outside the app shell).                                         |
+| `/`                   | yes  | Redirect → `/employees` (Directory as home).                                  |
+| `/employees`          | yes  | Directory: paginated table, search/filter/sort, export/import entry points.   |
+| `/employees/new`      | yes  | Create employee form.                                                         |
+| `/employees/:id`      | yes  | Employee detail + Edit/Delete actions.                                        |
+| `/employees/:id/edit` | yes  | Edit employee form.                                                           |
+| `/analytics`          | yes  | Compensation dashboard: summary, by-dimension comparison, distribution.       |
+| `/import-export`      | yes  | Bulk import dialog/page + export controls (may also surface on `/employees`). |
+| `*`                   | —    | Not-found page.                                                               |
 
 ---
 
 ## 5. Backend endpoints consumed (per feature)
 
-| Feature (phase) | Endpoints |
-| --------------- | --------- |
-| Auth (2)        | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` |
-| Directory (3)   | `GET /employees` (page/search/filter/sort) |
-| CRUD (4)        | `GET /employees/:id`, `POST /employees`, `PUT /employees/:id`, `DELETE /employees/:id` |
-| Analytics (5)   | `GET /analytics/summary`, `GET /analytics/by/:dimension`, `GET /analytics/distribution` |
-| Import/Export (6)| `POST /import` (multipart), `GET /export` (filters + `format`) |
-| Reference       | `GET /openapi.json` / `/docs` for contract reference (not called at runtime) |
+| Feature (phase)   | Endpoints                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| Auth (2)          | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`                                 |
+| Directory (3)     | `GET /employees` (page/search/filter/sort)                                              |
+| CRUD (4)          | `GET /employees/:id`, `POST /employees`, `PUT /employees/:id`, `DELETE /employees/:id`  |
+| Analytics (5)     | `GET /analytics/summary`, `GET /analytics/by/:dimension`, `GET /analytics/distribution` |
+| Import/Export (6) | `POST /import` (multipart), `GET /export` (filters + `format`)                          |
+| Reference         | `GET /openapi.json` / `/docs` for contract reference (not called at runtime)            |
 
 All request/response shapes come from `@acme/shared` (the wire types/schemas the backend already
 exports) — no client-side duplicate type definitions.
@@ -295,10 +313,11 @@ exports) — no client-side duplicate type definitions.
 ## 6. New dependencies (update tech-stack.md before adding)
 
 Recorded first in [../tech-stack.md](../tech-stack.md) with a one-line "why" each:
+
 - **`react-router-dom`** — client routing for the SPA's pages/guards.
 - **`react-hook-form`** + **`@hookform/resolvers`** — performant forms bound to the shared Zod schemas.
 - **`msw`** — request mocking so component/feature tests run against realistic response envelopes.
-- *(if used)* **`clsx`/`tailwind-merge`** — ergonomic conditional Tailwind classes; an **icon set**.
+- _(if used)_ **`clsx`/`tailwind-merge`** — ergonomic conditional Tailwind classes; an **icon set**.
 
 Already listed in tech-stack (no new entry needed): TanStack Query, Tailwind, Radix/Headless UI,
 Recharts, React Testing Library, Playwright.
@@ -320,7 +339,7 @@ Recharts, React Testing Library, Playwright.
 - **Schema reuse vs. wire dates.** Shared `employeeSchema` carries `createdAt`/`updatedAt` as ISO
   strings; forms use the **create/update** schemas (which omit server fields), so the client never has
   to invent timestamps.
-- **Form/server validation drift.** Mitigated by binding forms to the *shared* Zod schemas and still
+- **Form/server validation drift.** Mitigated by binding forms to the _shared_ Zod schemas and still
   mapping server `details`/409 onto fields — the client treats the server as the final authority.
 - **Bundle size.** Lazy-load feature routes and the chart library so the login/initial shell stays light.
 
