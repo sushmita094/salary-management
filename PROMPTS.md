@@ -467,3 +467,28 @@ that currency; distribution bands map to the backing table and a band-count chan
 empty and error states. Added a `ResizeObserver` polyfill to the test setup (jsdom lacks it; charts
 render empty and we assert on the backing tables). `pnpm --filter web` typecheck / lint / test (now
 **39**) and `build` (code-split) green, plus repo-wide typecheck/lint. Not committed, per instruction.
+
+> implement frontend plan phase 6
+
+Implemented **Phase 6 — Bulk import & export UI** of
+[docs/plans/03-frontend-implementation.md](docs/plans/03-frontend-implementation.md), test-first (no
+new deps). **Import** lives on the `/import-export` page
+([pages/ImportExportPage.tsx](apps/web/src/pages/ImportExportPage.tsx)): a file picker (`.csv`/`.xlsx`)
++ Upload that POSTs multipart via a `useImport` mutation
+([features/importExport/useImport.ts](apps/web/src/features/importExport/useImport.ts)) which on
+success **invalidates the directory + analytics** so imported changes show immediately. The response
+renders an [ImportResultView](apps/web/src/features/importExport/ImportResultView.tsx) — inserted /
+updated / **failed** counts plus a **per-row error table** (row number + messages), so bad rows are
+visible and never silently applied — and a 400 **header mismatch** surfaces a clear message listing
+the missing columns. Expected columns are documented inline from the shared `EMPLOYEE_IMPORT_COLUMNS`
+(no drift). **Export** is an [ExportButton](apps/web/src/features/importExport/ExportButton.tsx) on the
+**Directory** header (where the filters live): it builds the `/export` request from the active
+filters/sort (pagination dropped) + a CSV/Excel format select and triggers a browser download via a
+small blob [download helper](apps/web/src/lib/download.ts); the import-export page links here for
+export. Tests (RTL+MSW): upload shows the report (counts + skipped rows with messages); a header
+mismatch shows a clear error; export issues the request with the **active filter + chosen format and
+no pagination params**, and switching to Excel sends `format=xlsx`. Added a `URL.createObjectURL`
+stub to the test setup (jsdom lacks it). **Design note:** export sits on the Directory (so it
+reflects exactly the filtered view) rather than duplicating filter inputs on the import-export page.
+`pnpm --filter web` typecheck / lint / test (now **43**) and `build` green, plus repo-wide
+typecheck/lint. Not committed, per instruction.

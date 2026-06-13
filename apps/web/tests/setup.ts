@@ -11,6 +11,10 @@ globalThis.ResizeObserver ??= class {
   disconnect() {}
 };
 
+// jsdom doesn't implement object URLs (used by the export download).
+globalThis.URL.createObjectURL ??= () => "blob:mock";
+globalThis.URL.revokeObjectURL ??= () => {};
+
 // Mock Service Worker: realistic API responses for component/feature tests.
 // `bypass` lets tests that stub `fetch` directly (e.g. the client unit tests) pass through.
 beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));

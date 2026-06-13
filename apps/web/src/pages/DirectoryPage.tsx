@@ -7,6 +7,7 @@ import { Pagination } from "../components/ui/Pagination";
 import { EmployeeTable } from "../features/employees/EmployeeTable";
 import { FilterBar } from "../features/employees/FilterBar";
 import { hasActiveFilters, useEmployeeQuery } from "../features/employees/useEmployeeQuery";
+import { ExportButton } from "../features/importExport/ExportButton";
 import { useEmployees } from "../features/employees/useEmployees";
 
 /** Employee directory — paginated, searchable, filterable, sortable; state in the URL. */
@@ -26,9 +27,12 @@ export function DirectoryPage() {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Directory</h1>
-        <Link to="/employees/new">
-          <Button>New employee</Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <ExportButton query={query} />
+          <Link to="/employees/new">
+            <Button>New employee</Button>
+          </Link>
+        </div>
       </div>
 
       <FilterBar query={query} update={update} />
