@@ -233,3 +233,30 @@ separation, plus a 3k-row scale suite of fixture-independent invariants (headcou
 median∈[min,max], band counts account for everyone). Smoke-tested on the real 10k seed: summary in
 ~14ms, realistic right-skewed medians and histograms. `pnpm --filter api` typecheck / lint / test
 (now **59**) and shared tests all green. Not committed, per instruction.
+
+> lets implement phase 6 backend plan
+
+Implemented **Phase 6 — Bulk Excel/CSV import & export** of
+[docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md), test-first.
+Per the working agreement, updated [docs/tech-stack.md](docs/tech-stack.md) first: **SheetJS
+(`xlsx`)** parses *and* writes both Excel and CSV (one library for the round-trip) and **`multer`**
+(memory storage) handles the multipart upload — with a documented trade-off that SheetJS buffers
+rather than truly streams (fine at ~10k rows; `csv-parse` noted as the streaming fast-follow). Added
+shared contracts in [packages/shared/src/schemas/import.ts](packages/shared/src/schemas/import.ts):
+the canonical column list, an `importRowSchema` (coerces CSV strings, trims, validates email/
+currency), an `importResultSchema`, and an `exportQuerySchema` (the directory's filters/sort minus
+pagination, plus `format`). A thin SheetJS util
+([apps/api/src/utils/spreadsheet.ts](apps/api/src/utils/spreadsheet.ts)) exposes pure
+`parseRows`/`missingColumns`/`toCsv`/`toXlsx`. **Import** ([import.service.ts]) treats a header
+mismatch as a whole-file 400, validates each row independently (bad rows reported via
+`rowErrors[{ row, errors }]`, never fatal), dedupes valid rows by email (last wins), and upserts them
+in **one transaction** ([upsertEmployeesByEmail] — existing emails updated, the rest one
+`createMany`, atomic so a bad file can't half-apply). **Export** reuses the directory query layer
+(unpaginated) and streams CSV/XLSX with a download filename, columns matching the import format.
+Wired `POST /import` (multer `upload.single("file")`) and `GET /export`. Tests: unit for the
+spreadsheet helpers + `importRowSchema` (good/bad/coercion); integration for valid import, mixed
+valid/invalid (partial success + no corruption), email upsert, header mismatch (400), missing file
+(400), a 1,000-row file, filtered CSV export, an export→re-import **round-trip**, and xlsx output.
+Smoke-tested over real HTTP (1 inserted / 1 failed with per-row messages; CSV + 16KB xlsx with
+correct headers). Documented the format in the README. `pnpm --filter api` typecheck / lint / test
+(now **73**) and shared tests (**26**) all green. Not committed, per instruction.

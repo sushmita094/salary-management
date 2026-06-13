@@ -143,9 +143,15 @@ and ensures we never develop or test against a toy dataset.
 
 ### Bulk import/export — Excel/CSV
 
-A streaming parser (e.g. SheetJS / `csv-parse`) handles import; rows are validated with **Zod** and
-bad rows are reported back without aborting the whole file (requirements §5.4). Export reuses the
-same query layer as the directory so filtered views round-trip.
+**SheetJS (`xlsx`)** parses *both* Excel and CSV uploads and generates exports in either format, so a
+single library covers the round-trip with matching column headers. **`multer`** (memory storage)
+handles the multipart upload. Rows are validated with **Zod** and bad rows are reported back without
+aborting the whole file (requirements §5.4); valid rows are upserted by email in a transaction.
+Export reuses the same query layer (filters/sort) as the directory so filtered views round-trip.
+
+*Trade-off:* SheetJS buffers the workbook rather than truly streaming (the `.xlsx` zip format isn't
+streamable anyway). At the in-scope size (~10k rows / a few MB) this is fine; `csv-parse` remains the
+noted fast-follow if a true row-streaming CSV path is ever needed for much larger files.
 
 ### Validation — Zod, shared
 
@@ -246,8 +252,9 @@ follow these, not memory or blog posts.**
 
 - **Zod** — https://zod.dev/
 - **Faker** (seeding) — https://fakerjs.dev/
-- **SheetJS** (Excel parse/write) — https://docs.sheetjs.com/
-- **csv-parse** — https://csv.js.org/parse/
+- **SheetJS** (Excel/CSV parse + write) — https://docs.sheetjs.com/
+- **multer** (multipart upload) — https://github.com/expressjs/multer
+- **csv-parse** (noted streaming fast-follow) — https://csv.js.org/parse/
 
 ### Testing
 

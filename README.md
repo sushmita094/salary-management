@@ -61,6 +61,23 @@ pnpm --filter web exec playwright install chromium
 pnpm test:e2e
 ```
 
+## Bulk import / export format
+
+`POST /import` (multipart, field `file`) and `GET /export` share one CSV/Excel layout, so an export
+re-imports unchanged. The first row must be these headers, in any order:
+
+```
+name,email,country,department,jobTitle,level,salaryAmount,salaryCurrency
+```
+
+- **email** is the key: an import **upserts by email** (existing → updated, new → inserted).
+- **salaryAmount** is a number in the employee's local currency; **salaryCurrency** is a 3-letter
+  ISO 4217 code. No FX conversion happens.
+- Each row is validated independently — **bad rows are reported, not fatal** (the response lists
+  `{ inserted, updated, failed, rowErrors[] }`); a header mismatch fails the whole upload with 400.
+- `GET /export?format=xlsx` returns an `.xlsx` workbook; the default is CSV. Export honours the same
+  `search`/filter/`sort` params as the directory, so the file reflects the filtered view.
+
 ## Build
 
 ```bash

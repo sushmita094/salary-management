@@ -27,6 +27,14 @@ export {
   currencyDistributionSchema,
   analyticsDistributionSchema,
 } from "./schemas/analytics.js";
+export {
+  EMPLOYEE_IMPORT_COLUMNS,
+  EXPORT_FORMATS,
+  importRowSchema,
+  importRowErrorSchema,
+  importResultSchema,
+  exportQuerySchema,
+} from "./schemas/import.js";
 
 export type {
   Employee,
@@ -49,3 +57,9 @@ export type {
   CurrencyDistribution,
   AnalyticsDistribution,
 } from "./types/analytics.js";
+export type {
+  ImportRow,
+  ImportRowError,
+  ImportResult,
+  ExportQuery,
+} from "./types/import.js";

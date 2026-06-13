@@ -1,5 +1,9 @@
-import type { CreateEmployee, EmployeeQuery, UpdateEmployee } from "@acme/shared";
+import type { CreateEmployee, EmployeeQuery, ImportRow, UpdateEmployee } from "@acme/shared";
 import { prisma } from "../db/client.js";
+
+/** The filter/sort subset of a query — shared by the directory list and the export. */
+type EmployeeFilters = Pick<EmployeeQuery, "search" | "country" | "department" | "jobTitle" | "level">;
+type EmployeeSort = Pick<EmployeeQuery, "sort" | "order">;
 
 /**
  * Data access for employees. Returns Prisma row shapes (with `Date` timestamps);
@@ -19,7 +23,7 @@ type EmployeeWhere = NonNullable<FindManyArgs["where"]>;
 type EmployeeOrderBy = NonNullable<FindManyArgs["orderBy"]>;
 
 /** Build the `where` clause from free-text search and the equality filters. */
-export function buildWhere(query: EmployeeQuery): EmployeeWhere {
+export function buildWhere(query: EmployeeFilters): EmployeeWhere {
   const where: EmployeeWhere = {};
 
   if (query.search) {
@@ -42,7 +46,7 @@ export function buildWhere(query: EmployeeQuery): EmployeeWhere {
  * Order by the (whitelisted) sort column, then by `id` as a stable tiebreak so
  * pages don't shuffle rows that share a sort value (e.g. equal salaries).
  */
-export function buildOrderBy(query: EmployeeQuery): EmployeeOrderBy {
+export function buildOrderBy(query: EmployeeSort): EmployeeOrderBy {
   return [{ [query.sort]: query.order }, { id: "asc" }] as EmployeeOrderBy;
 }
 
@@ -82,4 +86,44 @@ export function updateEmployee(id: string, data: UpdateEmployee) {
 /** Delete an employee by id. Throws Prisma `P2025` if it doesn't exist. */
 export function deleteEmployee(id: string) {
   return prisma.employee.delete({ where: { id } });
+}
+
+/**
+ * Every employee matching the filters/sort, unpaginated — backs the export, so
+ * the downloaded file reflects exactly the filtered directory view.
+ */
+export function findEmployeesForExport(query: EmployeeFilters & EmployeeSort) {
+  return prisma.employee.findMany({
+    where: buildWhere(query),
+    orderBy: buildOrderBy(query),
+  });
+}
+
+/**
+ * Upsert import rows by email inside a single transaction: existing emails are
+ * updated, the rest inserted in one `createMany`. Atomic — a mid-batch failure
+ * rolls the whole import back, so a bad file never half-applies.
+ */
+export async function upsertEmployeesByEmail(
+  rows: ImportRow[],
+): Promise<{ inserted: number; updated: number }> {
+  if (rows.length === 0) return { inserted: 0, updated: 0 };
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.employee.findMany({
+      where: { email: { in: rows.map((row) => row.email) } },
+      select: { email: true },
+    });
+    const existingEmails = new Set(existing.map((e) => e.email));
+
+    const toInsert = rows.filter((row) => !existingEmails.has(row.email));
+    const toUpdate = rows.filter((row) => existingEmails.has(row.email));
+
+    if (toInsert.length > 0) await tx.employee.createMany({ data: toInsert });
+    for (const row of toUpdate) {
+      await tx.employee.update({ where: { email: row.email }, data: row });
+    }
+
+    return { inserted: toInsert.length, updated: toUpdate.length };
+  });
 }
