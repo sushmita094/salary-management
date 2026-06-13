@@ -391,3 +391,29 @@ inline error; the form validates before calling the API; sign-out returns to log
 suite now asserts the shell through the guard. `pnpm --filter web` typecheck / lint / test (now
 **18**) and `build` green, plus repo-wide typecheck/lint. Also set `msw` to `false` in the pnpm
 `allowBuilds` (node tests don't need its browser worker). Not committed, per instruction.
+
+> lets implement frontend plan phase 3
+
+Implemented **Phase 3 — Employee directory (list, search, filter, sort, paginate)** of
+[docs/plans/03-frontend-implementation.md](docs/plans/03-frontend-implementation.md), test-first (no
+new deps). The directory's query state lives in the **URL**: a `useEmployeeQuery` hook
+([features/employees/useEmployeeQuery.ts](apps/web/src/features/employees/useEmployeeQuery.ts))
+parses the search params into a typed `EmployeeQuery` via the shared `employeeQuerySchema`
+(defaults + coercion) and writes changes back, resetting to page 1 on any filter/sort change. The
+list query ([useEmployees.ts](apps/web/src/features/employees/useEmployees.ts)) uses
+`keepPreviousData` so paging/filtering doesn't flash, and `fetchEmployees`
+([api/employees.ts](apps/web/src/api/employees.ts)) always sends `page`/`pageSize` — the client never
+asks for the whole table. Built reusable **Table** and **Pagination** primitives plus a **FilterBar**
+(debounced search synced via the render-phase pattern, not an effect; `country`/`department`/`level`
+selects) and an **EmployeeTable** with sortable headers (`aria-sort`), skeleton-row loading,
+local-currency salaries (`formatSalary`), and rows linking to the (Phase 4) detail route. The
+[DirectoryPage](apps/web/src/pages/DirectoryPage.tsx) wires first-class **loading / empty (with Clear
+filters) / error (retryable)** states. Filter options come from a documented **stopgap constants
+file** ([filterOptions.ts](apps/web/src/features/employees/filterOptions.ts)) mirroring the seed —
+with a noted **backend follow-up**: a `GET /employees/filters` distinct-values endpoint (also needed
+to filter `jobTitle` well). Tests (RTL+MSW): renders a page with local-currency salaries; asserts the
+request is **always bounded** (page+pageSize); debounced search, a filter select, a sort header, and
+paging each update the query and refetch with the right params; empty + retryable-error states; and
+rows link to `/employees/:id`. Added a default `/employees` MSW handler so auth/routing suites that
+land on the Directory still resolve. `pnpm --filter web` typecheck / lint / test (now **26**) and
+`build` green, plus repo-wide typecheck/lint. Not committed, per instruction.

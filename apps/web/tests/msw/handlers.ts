@@ -17,4 +17,8 @@ export const handlers = [
   http.get("/api/auth/me", unauthorized),
   http.post("/api/auth/login", () => HttpResponse.json({ user: TEST_USER, token: "test-token" })),
   http.post("/api/auth/logout", () => new HttpResponse(null, { status: 204 })),
+  // Empty directory by default; directory tests override with fixtures.
+  http.get("/api/employees", () =>
+    HttpResponse.json({ data: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } }),
+  ),
 ];
