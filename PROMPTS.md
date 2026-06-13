@@ -140,3 +140,47 @@ currency-matches-country, known enums, multi-country/level spread, senior>junior
 seed to confirm it stays at exactly 10k, and spot-checked the DB (salary rises monotonically by
 level, 10 departments / 37 titles, correct per-currency amounts). Added a seed note to the README.
 `pnpm --filter api` typecheck / lint / test all green (9 tests). Not committed, per instruction.
+
+> there are errors in seed-data.test.ts
+
+Fixed three TypeScript errors in
+[apps/api/src/utils/seed-data.test.ts](apps/api/src/utils/seed-data.test.ts) that only the IDE
+surfaced. Root cause: `COUNTRIES`/`LEVELS` are declared `as const`, so the `Map`/`Set` built from
+their fields had **literal-union** key/element types — calling `.get(e.country)` / `.has(e.level)`
+with a plain `string` was a type error. Widened those lookups to `new Map<string, string>` /
+`new Set<string>`. CI hadn't caught it because [apps/api/tsconfig.json](apps/api/tsconfig.json)
+excludes `**/*.test.ts`, so `pnpm typecheck` never checks test files (flagged this gap to close in a
+hardening pass). Verified with a temp tsconfig that includes the test (clean) and re-ran the 8 tests.
+
+> dont forget to update prompts.md
+> lets implement phase 3 backend plan
+
+Implemented **Phase 3 — Employee directory (`GET /employees`: paginate / search / filter / sort)**
+of [docs/plans/02-backend-implementation.md](docs/plans/02-backend-implementation.md), test-first.
+Because this is the first feature endpoint, it also lands the cross-cutting foundations the plan
+settles once (§2.1/§2.2/§2.5): typed **domain errors**
+([apps/api/src/utils/errors.ts](apps/api/src/utils/errors.ts) — `AppError` base + `ValidationError`,
+`NotFoundError`, `ConflictError`, `UnauthorizedError`), a real **central error handler** mapping
+them to the `{ error: { code, message, details? } }` envelope, a reusable Zod **`validate`
+middleware** (params/query/body → parsed values on `res.locals`, throwing `ValidationError` on bad
+input), and an integration **test harness** (a per-file temp SQLite DB via `setupFiles`, migrated by
+replaying the committed migration SQL). The feature itself follows the layered stack: pure
+`buildWhere`/`buildOrderBy` helpers + `findEmployees`/`countEmployees` in the repository (single
+parametrised Prisma query; offset pagination; stable `id` sort tiebreak), a `listEmployees` service
+that computes `totalPages` and clamps the page, and a thin controller/route wired at
+`/employees`. Tests: unit for the query→args builders and the service's pagination math/clamp
+(mocked repo), integration for default page / search hit+miss / each filter / sort asc+desc / page
+bounds / empty result / validation 400s, plus a ~3k-row fixture asserting correct slicing across
+deep pages. Not committed, per instruction.
+
+> errors in setup-env.ts
+
+Fixed the IDE errors (`process` / `node:*` unresolved) in
+[apps/api/tests/setup-env.ts](apps/api/tests/setup-env.ts) — and every other test file — by closing
+the gap flagged earlier: [apps/api/tsconfig.json](apps/api/tsconfig.json) excluded `tests` and
+`**/*.test.ts`, so test files fell into an inferred project with no `@types/node`. Mirrored the web
+app's convention: `tsconfig.json` is now the editor/typecheck config (`noEmit: true`, `include:
+["src", "tests"]`), and a new [apps/api/tsconfig.build.json](apps/api/tsconfig.build.json) is the
+emit config (`src` only, `rootDir`/`outDir`, excludes tests) wired to the `build` script. `pnpm
+typecheck` now also type-checks the tests; `build` still emits only `src` to `dist` (no `*.test.js`
+leaks). typecheck / build / lint / test (30) all green. Not committed, per instruction.
