@@ -1,5 +1,6 @@
 import type { Pagination as PaginationMeta } from "@acme/shared";
 import { Button } from "./Button";
+import { Select } from "./Select";
 
 interface PaginationProps {
   pagination: PaginationMeta;
@@ -17,21 +18,18 @@ export function Pagination({ pagination, onPageChange, onPageSizeChange }: Pagin
     <div className="flex flex-wrap items-center justify-between gap-3 px-1 py-3 text-sm text-gray-600">
       <div className="flex items-center gap-2">
         <span>{total.toLocaleString()} results</span>
-        <label className="flex items-center gap-1">
-          <span className="sr-only">Rows per page</span>
-          <select
-            className="rounded-md border border-gray-300 bg-white px-2 py-1"
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            aria-label="Rows per page"
-          >
-            {PAGE_SIZES.map((size) => (
-              <option key={size} value={size}>
-                {size} / page
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          className="w-32"
+          value={pageSize}
+          onChange={(event) => onPageSizeChange(Number(event.target.value))}
+          aria-label="Rows per page"
+        >
+          {PAGE_SIZES.map((size) => (
+            <option key={size} value={size}>
+              {size} / page
+            </option>
+          ))}
+        </Select>
       </div>
 
       <div className="flex items-center gap-3">

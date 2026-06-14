@@ -576,3 +576,17 @@ install, so I went with the explicit, deterministic build.) Verified from a **cl
 `packages/shared/dist`): `pnpm test` rebuilds shared and passes all **171** unit/integration tests,
 and `pnpm test:e2e` rebuilds shared and passes all **9** Playwright journeys; lint / typecheck / build
 green. Not committed, per instruction.
+
+> fix these 2 things:
+> 1. placeholder on login email and password field
+> 2. dropdown arrow sticking to right
+
+Two UI fixes. (1) Added `placeholder` text to the login email/password inputs
+([LoginPage.tsx](apps/web/src/pages/LoginPage.tsx)). (2) The browser's native `<select>` arrow can't
+be positioned (it's flush to the edge regardless of padding), so reworked the
+[Select](apps/web/src/components/ui/Select.tsx) primitive to `appearance-none` with a custom chevron
+SVG absolutely positioned with consistent spacing (`right-3`, `pr-9` so text never overlaps it); the
+passed `className` now sizes the wrapper. Switched the [Pagination](apps/web/src/components/ui/Pagination.tsx)
+page-size dropdown from a raw `<select>` to the same primitive for consistency. `getByLabelText`
+association still works through the wrapper (the select is the labelable descendant). `pnpm --filter
+web` typecheck / lint / test (**46**) green. Not committed, per instruction.

@@ -56,6 +56,7 @@ export function LoginPage() {
               id="email"
               type="email"
               autoComplete="username"
+              placeholder="you@acme.example"
               invalid={Boolean(errors.email)}
               {...register("email")}
             />
@@ -70,6 +71,7 @@ export function LoginPage() {
               id="password"
               type="password"
               autoComplete="current-password"
+              placeholder="Your password"
               invalid={Boolean(errors.password)}
               {...register("password")}
             />
