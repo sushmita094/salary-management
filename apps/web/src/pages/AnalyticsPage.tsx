@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
+import { ErrorState } from "../components/ui/ErrorState";
 import { Select } from "../components/ui/Select";
 import { Skeleton } from "../components/ui/Skeleton";
 import { DistributionChart } from "../features/analytics/DistributionChart";
@@ -35,16 +36,14 @@ export function AnalyticsPage() {
 
   if (isError) {
     return (
-      <Card className="p-6">
-        <EmptyState
-          title="Couldn’t load analytics"
-          action={
-            <Button variant="secondary" onClick={() => void refetch()}>
-              Retry
-            </Button>
-          }
-        />
-      </Card>
+      <ErrorState
+        title="Couldn’t load analytics"
+        action={
+          <Button variant="secondary" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        }
+      />
     );
   }
 

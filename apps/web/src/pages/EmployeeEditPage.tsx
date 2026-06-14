@@ -3,8 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiRequestError } from "../api/client";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
-import { EmptyState } from "../components/ui/EmptyState";
-import { Spinner } from "../components/ui/Spinner";
+import { ErrorState } from "../components/ui/ErrorState";
+import { PageSpinner } from "../components/ui/PageSpinner";
 import { useToast } from "../components/ui/toast-context";
 import { EmployeeForm } from "../features/employees/EmployeeForm";
 import { useUpdateEmployee } from "../features/employees/employeeMutations";
@@ -17,27 +17,19 @@ export function EmployeeEditPage() {
   const { data: employee, isPending, isError, error } = useEmployee(id);
   const updateMutation = useUpdateEmployee(id);
 
-  if (isPending) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner className="h-6 w-6 text-brand-600" />
-      </div>
-    );
-  }
+  if (isPending) return <PageSpinner />;
 
   if (isError) {
     const notFound = error instanceof ApiRequestError && error.status === 404;
     return (
-      <Card className="p-6">
-        <EmptyState
-          title={notFound ? "Employee not found" : "Couldn’t load employee"}
-          action={
-            <Link to="/employees">
-              <Button variant="secondary">Back to Directory</Button>
-            </Link>
-          }
-        />
-      </Card>
+      <ErrorState
+        title={notFound ? "Employee not found" : "Couldn’t load employee"}
+        action={
+          <Link to="/employees">
+            <Button variant="secondary">Back to Directory</Button>
+          </Link>
+        }
+      />
     );
   }
 

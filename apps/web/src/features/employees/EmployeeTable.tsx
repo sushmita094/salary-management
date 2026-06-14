@@ -59,7 +59,10 @@ export function EmployeeTable({ rows, query, onSort, isLoading }: EmployeeTableP
           : rows.map((employee) => (
               <Tr key={employee.id} className="hover:bg-gray-50">
                 <Td className="font-medium text-gray-900">
-                  <Link to={`/employees/${employee.id}`} className="text-brand-700 hover:underline">
+                  <Link
+                    to={`/employees/${employee.id}`}
+                    className="rounded text-brand-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+                  >
                     {employee.name}
                   </Link>
                 </Td>
@@ -92,7 +95,7 @@ function SortableHeader({
       <button
         type="button"
         onClick={() => onSort(column.field)}
-        className="inline-flex items-center gap-1 font-medium uppercase tracking-wide hover:text-gray-900"
+        className="inline-flex items-center gap-1 rounded font-medium uppercase tracking-wide hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
       >
         {column.label}
         {indicator && <span aria-hidden="true">{indicator}</span>}

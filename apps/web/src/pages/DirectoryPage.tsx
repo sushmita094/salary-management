@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
+import { ErrorState } from "../components/ui/ErrorState";
 import { Pagination } from "../components/ui/Pagination";
 import { EmployeeTable } from "../features/employees/EmployeeTable";
 import { FilterBar } from "../features/employees/FilterBar";
@@ -38,17 +39,15 @@ export function DirectoryPage() {
       <FilterBar query={query} update={update} />
 
       {isError ? (
-        <Card className="p-6">
-          <EmptyState
-            title="Couldn’t load employees"
-            description="Something went wrong fetching the directory."
-            action={
-              <Button variant="secondary" onClick={() => void refetch()}>
-                Retry
-              </Button>
-            }
-          />
-        </Card>
+        <ErrorState
+          title="Couldn’t load employees"
+          description="Something went wrong fetching the directory."
+          action={
+            <Button variant="secondary" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          }
+        />
       ) : !isPending && data && data.data.length === 0 ? (
         <Card className="p-6">
           <EmptyState
@@ -64,7 +63,7 @@ export function DirectoryPage() {
           />
         </Card>
       ) : (
-        <div className={isFetching ? "opacity-60 transition-opacity" : undefined}>
+        <div aria-busy={isFetching} className={isFetching ? "opacity-60 transition-opacity" : undefined}>
           <EmployeeTable rows={data?.data ?? []} query={query} onSort={onSort} isLoading={isPending} />
           {data && (
             <Pagination

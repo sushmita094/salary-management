@@ -5,8 +5,8 @@ import { ApiRequestError } from "../api/client";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { ConfirmDialog } from "../components/ui/Dialog";
-import { EmptyState } from "../components/ui/EmptyState";
-import { Spinner } from "../components/ui/Spinner";
+import { ErrorState } from "../components/ui/ErrorState";
+import { PageSpinner } from "../components/ui/PageSpinner";
 import { useToast } from "../components/ui/toast-context";
 import { useDeleteEmployee } from "../features/employees/employeeMutations";
 import { useEmployee } from "../features/employees/useEmployee";
@@ -20,28 +20,20 @@ export function EmployeeDetailPage() {
   const deleteMutation = useDeleteEmployee();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  if (isPending) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner className="h-6 w-6 text-brand-600" />
-      </div>
-    );
-  }
+  if (isPending) return <PageSpinner />;
 
   if (isError) {
     const notFound = error instanceof ApiRequestError && error.status === 404;
     return (
-      <Card className="p-6">
-        <EmptyState
-          title={notFound ? "Employee not found" : "Couldn’t load employee"}
-          description={notFound ? "This employee may have been deleted." : "Please try again."}
-          action={
-            <Link to="/employees">
-              <Button variant="secondary">Back to Directory</Button>
-            </Link>
-          }
-        />
-      </Card>
+      <ErrorState
+        title={notFound ? "Employee not found" : "Couldn’t load employee"}
+        description={notFound ? "This employee may have been deleted." : "Please try again."}
+        action={
+          <Link to="/employees">
+            <Button variant="secondary">Back to Directory</Button>
+          </Link>
+        }
+      />
     );
   }
 

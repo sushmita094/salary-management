@@ -492,3 +492,28 @@ stub to the test setup (jsdom lacks it). **Design note:** export sits on the Dir
 reflects exactly the filtered view) rather than duplicating filter inputs on the import-export page.
 `pnpm --filter web` typecheck / lint / test (now **43**) and `build` green, plus repo-wide
 typecheck/lint. Not committed, per instruction.
+
+> okay lets implement frontend plan phase 7
+
+Implemented **Phase 7 — UX polish, accessibility & responsiveness** of
+[docs/plans/03-frontend-implementation.md](docs/plans/03-frontend-implementation.md), test-first (no
+new deps) — a focused pass, since earlier phases already folded in labelled controls, `aria-sort`,
+the Radix dialog, `role=alert`, `aria-live` toasts, and lazy-loading. **Responsiveness:** the app
+shell header ([components/layout/AppShell.tsx](apps/web/src/components/layout/AppShell.tsx)) now
+reflows — on narrow screens the primary nav drops to its own full-width, horizontally-scrollable row
+(flex-wrap + `order`) and the user email hides; the directory table already scrolls horizontally and
+the dashboard/cards already reflow. **Accessibility:** added a **skip-to-content** link + a focusable
+`<main id="main-content">` landmark, and **visible focus rings** on the brand, nav links, row links,
+and sort buttons (buttons/inputs already had them); the active nav item carries `aria-current` (via
+`NavLink`), and the directory marks `aria-busy` during background refetches. **Consistency:**
+introduced shared [ErrorState](apps/web/src/components/ui/ErrorState.tsx) and
+[PageSpinner](apps/web/src/components/ui/PageSpinner.tsx) components and refactored the directory,
+analytics, detail, and edit pages to use them — unifying loading/error treatments (titles kept, so
+behaviour is unchanged). Tests: a new a11y suite ([tests/a11y.test.tsx](apps/web/tests/a11y.test.tsx))
+asserts the skip link, `aria-current` on the active nav, `aria-sort` reflecting the sort state, and
+that the delete dialog has an accessible name, **traps focus**, and closes on **Escape**. Updated the
+Playwright **smoke** to the auth-gated reality (unauthenticated → sign-in) and added a
+**narrow-viewport** spec checking there's no horizontal overflow at 375px — these need a browser/stack
+so they weren't run here (authenticated responsive E2E journeys are **Phase 8**). `pnpm --filter web`
+typecheck / lint / test (now **46**) and `build` green, plus repo-wide typecheck/lint. Not committed,
+per instruction.
