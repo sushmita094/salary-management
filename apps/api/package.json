@@ -13,7 +13,8 @@
     "test": "vitest run",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "e2e:serve": "prisma migrate deploy && tsx prisma/seed.ts && tsx src/index.ts"
   },
   "dependencies": {
     "@acme/shared": "workspace:*",

@@ -1,6 +1,7 @@
 import type { EmployeeQuery } from "@acme/shared";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/Button";
+import { buttonClasses } from "../components/ui/button-styles";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
 import { ErrorState } from "../components/ui/ErrorState";
@@ -30,8 +31,8 @@ export function DirectoryPage() {
         <h1 className="text-xl font-semibold text-gray-900">Directory</h1>
         <div className="flex items-center gap-3">
           <ExportButton query={query} />
-          <Link to="/employees/new">
-            <Button>New employee</Button>
+          <Link to="/employees/new" className={buttonClasses()}>
+            New employee
           </Link>
         </div>
       </div>

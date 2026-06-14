@@ -58,5 +58,5 @@ jobs:
       - name: Install Playwright browser
         run: pnpm --filter web exec playwright install --with-deps chromium
 
-      - name: Run E2E smoke
+      - name: Run E2E journeys
         run: pnpm --filter web test:e2e

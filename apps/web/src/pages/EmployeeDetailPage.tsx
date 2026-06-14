@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiRequestError } from "../api/client";
 import { Button } from "../components/ui/Button";
+import { buttonClasses } from "../components/ui/button-styles";
 import { Card } from "../components/ui/Card";
 import { ConfirmDialog } from "../components/ui/Dialog";
 import { ErrorState } from "../components/ui/ErrorState";
@@ -29,8 +30,8 @@ export function EmployeeDetailPage() {
         title={notFound ? "Employee not found" : "Couldn’t load employee"}
         description={notFound ? "This employee may have been deleted." : "Please try again."}
         action={
-          <Link to="/employees">
-            <Button variant="secondary">Back to Directory</Button>
+          <Link to="/employees" className={buttonClasses("secondary")}>
+            Back to Directory
           </Link>
         }
       />
@@ -58,8 +59,8 @@ export function EmployeeDetailPage() {
           <p className="text-sm text-gray-500">{employee.email}</p>
         </div>
         <div className="flex gap-3">
-          <Link to={`/employees/${id}/edit`}>
-            <Button variant="secondary">Edit</Button>
+          <Link to={`/employees/${id}/edit`} className={buttonClasses("secondary")}>
+            Edit
           </Link>
           <ConfirmDialog
             open={confirmOpen}

@@ -62,5 +62,13 @@ single-user auth gate (JWT cookie *or* Bearer), hardening (helmet/CORS/rate-limi
 graceful shutdown), and a hosted Swagger UI at `/docs` generated from the shared Zod schemas. All
 layers tested (Vitest + Supertest); `pnpm test`/`lint`/`typecheck` green.
 
-The **frontend** feature work (React UI: directory table, forms, analytics dashboard) is next — see
-[docs/plans/](docs/plans/). Update this file as structure evolves.
+**Frontend feature-complete** ([03-frontend-implementation.md](docs/plans/03-frontend-implementation.md),
+all 8 phases): a React 19 + React Router SPA with the auth gate (login + route protection), the
+URL-synced employee directory (paginate/search/filter/sort), full CRUD with shared-schema validation
+and mapped server errors, the per-currency analytics dashboard (avg + median + distribution via
+Recharts, lazy-loaded), bulk import (per-row report) + filtered export, and an a11y/responsive polish
+pass. Tested with Vitest + RTL + MSW and **Playwright E2E journeys against the seeded api+web stack**;
+`pnpm test`/`test:e2e`/`lint`/`typecheck`/`build` green locally and in CI.
+
+The product is now **end-to-end complete**. Remaining work is deployment/hosting (a separate plan).
+Update this file as structure evolves.

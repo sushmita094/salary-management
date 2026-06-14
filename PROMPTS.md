@@ -517,3 +517,27 @@ Playwright **smoke** to the auth-gated reality (unauthenticated → sign-in) and
 so they weren't run here (authenticated responsive E2E journeys are **Phase 8**). `pnpm --filter web`
 typecheck / lint / test (now **46**) and `build` green, plus repo-wide typecheck/lint. Not committed,
 per instruction.
+
+> implement frontend plan phase 8
+
+Implemented **Phase 8 — Test coverage & end-to-end journeys** of
+[docs/plans/03-frontend-implementation.md](docs/plans/03-frontend-implementation.md), the final
+frontend phase. First fixed a latent HTML/a11y issue: several `<Link><Button>` spots nested a button
+inside an anchor — extracted [button-styles.ts](apps/web/src/components/ui/button-styles.ts)
+(`buttonClasses`) and switched those to styled `<Link>`s (valid anchors, and clean `role=link`
+locators for E2E). Stood up **Playwright E2E against the real stack**: a new api `e2e:serve` script
+(`prisma migrate deploy && seed && start`) and a [playwright.config.ts](apps/web/playwright.config.ts)
+that boots **two** web servers — the seeded Express API on :3000 (fresh `e2e.db`, full 10k seed + the
+HR-Manager login via env) and the Vite dev server on :5173 (proxying `/api`) — running serially on
+one worker for deterministic state. Wrote journey specs covering §2.9 end to end:
+[auth](apps/web/e2e/auth.spec.ts) (deep-link guard → sign in → land on target; sign-out),
+[directory](apps/web/e2e/directory.spec.ts) (paginate/sort/filter/search → URL + results),
+[crud](apps/web/e2e/crud.spec.ts) (create → detail → edit → delete via the confirm dialog),
+[analytics](apps/web/e2e/analytics.spec.ts) (per-currency summary + dimension/currency switch),
+[import-export](apps/web/e2e/import-export.spec.ts) (upload → per-row report; export → download), plus
+the smoke + responsive specs. **Ran the suite for real** — installed Chromium and executed
+`playwright test`: **9/9 E2E passed** against the seeded stack (~12s). Updated the CI e2e step name;
+the existing CI job already installs Chromium and runs `test:e2e` (config now starts both servers, so
+no further CI change needed). Marked [CLAUDE.md](CLAUDE.md) **frontend feature-complete /
+end-to-end**. Full local verification: repo `typecheck` / `lint` green; unit/integration **api +
+web (46) + shared** green; **Playwright E2E 9/9** green; `build` green. Not committed, per instruction.

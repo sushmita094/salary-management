@@ -1,7 +1,7 @@
 import type { CreateEmployee } from "@acme/shared";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiRequestError } from "../api/client";
-import { Button } from "../components/ui/Button";
+import { buttonClasses } from "../components/ui/button-styles";
 import { Card } from "../components/ui/Card";
 import { ErrorState } from "../components/ui/ErrorState";
 import { PageSpinner } from "../components/ui/PageSpinner";
@@ -25,8 +25,8 @@ export function EmployeeEditPage() {
       <ErrorState
         title={notFound ? "Employee not found" : "Couldn’t load employee"}
         action={
-          <Link to="/employees">
-            <Button variant="secondary">Back to Directory</Button>
+          <Link to="/employees" className={buttonClasses("secondary")}>
+            Back to Directory
           </Link>
         }
       />
