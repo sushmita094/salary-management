@@ -11,8 +11,8 @@
   "scripts": {
     "dev": "pnpm -r --parallel run dev",
     "build": "pnpm -r run build",
-    "test": "pnpm -r run test",
-    "test:e2e": "pnpm --filter web run test:e2e",
+    "test": "pnpm --filter @acme/shared run build && pnpm -r run test",
+    "test:e2e": "pnpm --filter @acme/shared run build && pnpm --filter web run test:e2e",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
     "format": "prettier --write .",

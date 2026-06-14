@@ -541,3 +541,38 @@ the existing CI job already installs Chromium and runs `test:e2e` (config now st
 no further CI change needed). Marked [CLAUDE.md](CLAUDE.md) **frontend feature-complete /
 end-to-end**. Full local verification: repo `typecheck` / `lint` green; unit/integration **api +
 web (46) + shared** green; **Playwright E2E 9/9** green; `build` green. Not committed, per instruction.
+
+> there are errors in playwright.config, import-export.spec
+
+Fixed IDE/type errors in the E2E files: [apps/web/tsconfig.json](apps/web/tsconfig.json) **excluded**
+`e2e`, so the IDE checked the specs + `playwright.config.ts` in an inferred project with the wrong
+settings (Node resolution demanding `.js` import extensions, no DOM lib for the `page.evaluate`
+`document`/`window`, no Node types for `Buffer`). Included `e2e` + `playwright.config.ts` in the
+tsconfig and added `"node"` to `types` — now they type-check with Bundler resolution + DOM + Node, so
+the errors clear. Side benefit: this **closes a gap** — the E2E specs were never type-checked before
+and are now part of `pnpm typecheck`. Vitest still ignores `e2e/**` (its own exclude), so unit runs
+are unaffected. Repo typecheck / lint and web unit tests (46) green. Not committed, per instruction.
+
+> dropdown chevron icon on the right - right padding increase slightly
+
+Small UI tweak to the [Select](apps/web/src/components/ui/Select.tsx) primitive: split the symmetric
+`px-3` into `pl-3 pr-4` so the native dropdown chevron on the right gets slightly more breathing room
+from the border (left padding unchanged). Applies everywhere `Select` is used (filters, forms,
+analytics controls, pagination page-size). Not committed, per instruction.
+
+> github action is failing can u check
+
+Diagnosed the CI failure by pulling the actual job log from the GitHub Actions API (the run was the
+repo's **first-ever** CI run). Root cause was **not** in the new code — the `Test` step failed with
+`Failed to resolve entry for package "@acme/shared"` across 10 api suites. `@acme/shared`'s
+`package.json` resolves at runtime to `./dist/index.js` (`main`/`exports.default`), but its `dist/`
+is **never built in CI** — the workflow ran `test`/`test:e2e` before `build`, and a clean checkout has
+no `dist` (locally it passed only because an earlier build left `dist/` behind). Typecheck passed
+because it uses the `types` → source entry. Fix: made the root [package.json](package.json) `test` and
+`test:e2e` scripts build `@acme/shared` first (`pnpm --filter @acme/shared run build && …`), so they're
+self-sufficient on a fresh checkout *and* in CI; pointed the CI e2e job at the root `pnpm test:e2e`.
+(Tried a `prepare` hook on shared first, but pnpm doesn't reliably run it for workspace packages on
+install, so I went with the explicit, deterministic build.) Verified from a **clean state** (deleted
+`packages/shared/dist`): `pnpm test` rebuilds shared and passes all **171** unit/integration tests,
+and `pnpm test:e2e` rebuilds shared and passes all **9** Playwright journeys; lint / typecheck / build
+green. Not committed, per instruction.
